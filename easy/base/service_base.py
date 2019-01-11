@@ -36,13 +36,14 @@ class ServiceBase(object):
         self.hook_funcs.append([service_base_hooks.ensure_utf8_g])
         self.hook_funcs.append([service_base_hooks.check_response_in_time_g, 10])
         self.hook_funcs.append([service_base_hooks.print_response_info_g])
-        self.hook_funcs.append([service_base_hooks.check_http_code_g, 200])
-        self.hook_funcs.append([service_base_hooks.check_status_code, 0])
+
+        # Only suitable for positives.disable by default
+        # self.hook_funcs.append([service_base_hooks.check_http_code_g, 200])
+        # self.hook_funcs.append([service_base_hooks.check_status_code, 0])
 
     # region before request/ after response 等增强特性
 
     def __before_request(self, method, url, **kwargs):
-        # log request info and can do more...
 
         if 'info' in kwargs:
             if kwargs.get('info'):
