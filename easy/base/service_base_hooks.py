@@ -27,6 +27,11 @@ def check_http_code(resp: Response, expected_http_code):
     assert resp.status_code == expected_http_code, 'resp.status_code:%s与期望:%s不一致' % (resp.status_code, expected_http_code)
 
 
+def check_http_code_not200(resp: Response):
+    """检查http_code不是200"""
+    assert resp.status_code != 200, 'resp.status_code:%s期望不是200' % (resp.status_code)
+
+
 def check_status_code(resp: Response, expected_status_code=0):
     """检查resp.data内的status值"""
     resp_status = None
@@ -41,8 +46,26 @@ def check_status_code(resp: Response, expected_status_code=0):
             logging.info("check_status_code: 尝试使用resp.json()['status']获取status值也失败:%s" % e_json)
     finally:
         if resp_status is None:
-            raise
+            raise Exception('获取resp.data$status失败:%s' % resp)
     assert resp_status == expected_status_code, 'check_status_code: resp.status:%s 与期望值:%s 不一致' % (resp_status, expected_status_code)
+
+
+def check_status_code_not0(resp: Response):
+    """检查resp.data内的status值不是0"""
+    resp_status = None
+    try:
+        # 此处尽量使用resp.model.status取值，顺便测试下model_hook健壮性
+        resp_status = resp.model.status
+    except Exception as e_model:
+        logging.info("check_status_code: 尝试使用Response.model.status获取status值失败:%s,使用resp.json['status']获取" % e_model)
+        try:
+            resp_status = resp.json()['status']
+        except Exception as e_json:
+            logging.info("check_status_code: 尝试使用resp.json()['status']获取status值也失败:%s" % e_json)
+    finally:
+        if resp_status is None:
+            raise Exception('获取resp.data$status失败:%s' % resp)
+    assert resp_status != 0, 'check_status_code: resp.status:%s期望不为0' % (resp_status)
 
 
 def check_response_data_is_null(resp: Response):
