@@ -248,6 +248,18 @@ class ServiceBase(object):
             else:
                 return self.host.rstrip('/') + path
 
+    def raise_exception(self, request, response: Response, should_raise=True, message=''):
+        """
+        when a request fail, is it expected or should it raise an exception
+        :param request:
+        :param response:
+        :param should_raise:
+        :param message:
+        :return:
+        """
+        if should_raise:
+            raise Exception('%s\n[REQUEST:<%s>]\n[RESPONSE:<%s-%s,%s>]' % (message, request, response.status_code, response.reason, response.text))
+
     # region 不推荐使用的url辅助方法
     def build_url(self, path, path_param_list=None, query_params: dict = None, ensure_slash=False):
         warnings.warn("强烈不推荐使用，保留仅为兼容旧的使用习惯，推荐使用host/path/params等http标准做法", DeprecationWarning, 2)
