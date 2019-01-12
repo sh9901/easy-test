@@ -22,8 +22,8 @@ def ensure_utf8_g(resp: Response):
 
 
 # TODO 检查http_code=200是否加入默认检查TBD
-def check_http_code(resp: Response, expected_http_code):
-    """检查httpcode"""
+def check_http_code(resp: Response, expected_http_code=200):
+    """检查httpcode,default 200"""
     assert resp.status_code == expected_http_code, 'resp.status_code:%s与期望:%s不一致' % (resp.status_code, expected_http_code)
 
 
@@ -33,7 +33,7 @@ def check_http_code_not200(resp: Response):
 
 
 def check_status_code(resp: Response, expected_status_code=0):
-    """检查resp.data内的status值"""
+    """检查resp.data内的status值,default 0"""
     resp_status = None
     try:
         # 此处尽量使用resp.model.status取值，顺便测试下model_hook健壮性
