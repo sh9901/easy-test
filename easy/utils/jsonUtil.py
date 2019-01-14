@@ -136,15 +136,15 @@ def compare(actual: dict, expect: dict, contains_as_true=True, ignore_none=True,
                 return True
         else:  # 非精确匹配, 暂时只支持正则匹配
             match_name = 'JSON PARTIAL REGEX MATCH' if contains_as_true else 'JSON FULL REGEX MATCH'  # pitfall
-            match, match_msg = regex_compare(actual, expect, contains_as_true, match=True, match_msg='Match OK.', ori_actual=actual, ori_expected=expect)
+            match, match_info = regex_compare(actual, expect, contains_as_true, match=True, match_info='Match OK.', ori_actual=actual, ori_expected=expect)
             if match:
                 compare_content = "%s:\n>>>>>ACTUAL>>>>>\n%s\n>>>>>EXPECT>>>>> \n%s" % (match_name, pprint.pformat(actual, width=sys.maxsize), pprint.pformat(expect, width=sys.maxsize))
                 logging.info(compare_content)
-                logging.info(match_msg)
+                logging.info(match_info)
                 return True
             else:
-                # logging.error(compare_content) # 失败时返回match_msg包含全部信息
-                logging.error(match_msg)
+                # logging.error(compare_content) # 失败时返回match_info包含全部信息
+                logging.error(match_info)
                 return False
 
 
@@ -230,9 +230,9 @@ def __ignore_missed_field(diff_result: dict):
 ORIGI_HOLDER = '\n[<%s>]'
 
 
-def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True, match_msg='MATCH OK.', ori_actual=None, ori_expected=None):
+def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True, match_info='MATCH OK.', ori_actual=None, ori_expected=None):
     if not match:
-        return False, match_msg
+        return False, match_info
     if type(actual) != type(expect):
         return False, 'JSON REGEX MATCH RESULT:FAIL,Reason:args type not match\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECTED>>>>>\n%s%s' \
                % (pprint.pformat(actual, width=sys.maxsize),
@@ -258,9 +258,9 @@ def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True,
         else:
             lve = expect[0]
             for lva in actual:
-                match, match_msg = regex_compare(lva, lve, contains_as_ture, match, match_msg, ori_expected, ori_expected)
+                match, match_info = regex_compare(lva, lve, contains_as_ture, match, match_info, ori_expected, ori_expected)
                 if not match:
-                    return match, match_msg
+                    return match, match_info
     elif isinstance(expect, dict):  # 则都为dict
         keyas = sorted(actual.keys())
         keys = keyes = sorted(expect.keys())
@@ -283,9 +283,9 @@ def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True,
                     continue
                 elif isinstance(expect[key], dict):
                     if isinstance(actual[key], dict):
-                        match, match_msg = regex_compare(actual[key], expect[key], contains_as_ture, match, match_msg, ori_actual, ori_expected)
+                        match, match_info = regex_compare(actual[key], expect[key], contains_as_ture, match, match_info, ori_actual, ori_expected)
                         if not match:
-                            return match, match_msg
+                            return match, match_info
                     else:
                         return False, "JSON REGEX MATCH RESULT:FAIL,Reason:object[%s] TYPE ERROR:\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECT>>>>>\n%s%s" \
                                % (key,
@@ -297,9 +297,9 @@ def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True,
                     if isinstance(actual[key], list):
                         llvve = expect[key][0]
                         for llvva in actual[key]:
-                            match, match_msg = regex_compare(llvva, llvve, contains_as_ture, match, match_msg, ori_actual, ori_expected)
+                            match, match_info = regex_compare(llvva, llvve, contains_as_ture, match, match_info, ori_actual, ori_expected)
                             if not match:
-                                return match, match_msg
+                                return match, match_info
                     else:
                         return False, "JSON REGEX MATCH RESULT:FAIL,Reason:object[%s] TYPE ERROR:\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECT>>>>>\n%s%s" \
                                % (key,
@@ -319,4 +319,4 @@ def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True,
                                   pprint.pformat(expect, width=sys.maxsize),
                                   ORIGI_HOLDER % pprint.pformat(ori_expected, width=sys.maxsize) if expect != ori_expected else '')
 
-    return match, match_msg
+    return match, match_info

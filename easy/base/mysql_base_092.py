@@ -28,24 +28,24 @@
 #
 #         # print('Connect DB with:{0}'.format(self.__dict__))
 #
-#     def execute_query_many(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> list:
-#         print('{0}执行SQL:{1}'.format('%s: ' % msg if msg else '', sql), '参数:%s' % str(args) if args else '')
+#     def execute_query_many(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> list:
+#         print('{0}执行SQL:{1}'.format('%s: ' % info if info else '', sql), '参数:%s' % str(args) if args else '')
 #         self.db_config.update(dbconfig_kwargs)
 #         with pymysql.connect(**self.db_config) as cursor:
 #             cursor.execute(sql, args)
 #             results = cursor.fetchall()
 #             return results
 #
-#     def execute_query_one(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> dict:
-#         print('{0}执行SQL:{1}'.format('%s: ' % msg if msg else '', sql), '参数:%s' % str(args) if args else '')
+#     def execute_query_one(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> dict:
+#         print('{0}执行SQL:{1}'.format('%s: ' % info if info else '', sql), '参数:%s' % str(args) if args else '')
 #         self.db_config.update(dbconfig_kwargs)
 #         with pymysql.connect(**self.db_config) as cursor:
 #             cursor.execute(sql, args)
 #             result = cursor.fetchone()
 #             return result
 #
-#     def execute_query_one_value(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> object:
-#         print('{0}执行SQL:{1}'.format('%s: ' % msg if msg else '', sql), '参数:%s' % str(args) if args else '')
+#     def execute_query_one_value(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> object:
+#         print('{0}执行SQL:{1}'.format('%s: ' % info if info else '', sql), '参数:%s' % str(args) if args else '')
 #         self.db_config.update(dbconfig_kwargs)
 #         assert self.db_config.get('cursorclass') == DictCursor, 'execute_query_one_value只支持DictCursor'
 #         with pymysql.connect(**self.db_config) as cursor:
@@ -54,8 +54,8 @@
 #             if result:
 #                 return list(result.values())[0]
 #
-#     def execute_non_query(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs):
-#         print('{0}执行SQL:{1}'.format('%s: ' % msg if msg else '', sql), '参数:%s' % str(args) if args else '')
+#     def execute_non_query(self, sql: str, args: list = None, info=None, **dbconfig_kwargs):
+#         print('{0}执行SQL:{1}'.format('%s: ' % info if info else '', sql), '参数:%s' % str(args) if args else '')
 #         self.db_config.update(dbconfig_kwargs)
 #         with pymysql.connect(**self.db_config) as cursor:
 #             rows_affected = cursor.execute(sql, args)

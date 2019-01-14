@@ -28,8 +28,8 @@ class MySQLDb(object):
 
         # print('Connect DB with:{0}'.format(self.__dict__))
 
-    def execute_query_many(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> list:
-        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % msg if msg else '', sql, ',PARAMS:%s' % str(args) if args else ''))
+    def execute_query_many(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> list:
+        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % info if info else '', sql, ',PARAMS:%s' % str(args) if args else ''))
         self.db_config.update(dbconfig_kwargs)
         connection = pymysql.connect(**self.db_config)
         try:
@@ -42,8 +42,8 @@ class MySQLDb(object):
         finally:
             connection.close()  # pymysql <=0.9.2 context manager bug，不自动关闭connection-计划迁往0.9.3
 
-    def execute_query_one(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> dict:
-        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % msg if msg else '', sql, ',PARAMS:%s' % str(args) if args else ''))
+    def execute_query_one(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> dict:
+        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % info if info else '', sql, ',PARAMS:%s' % str(args) if args else ''))
         self.db_config.update(dbconfig_kwargs)
         connection = pymysql.connect(**self.db_config)
         try:
@@ -56,8 +56,8 @@ class MySQLDb(object):
         finally:
             connection.close()
 
-    def execute_query_one_value(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> object:
-        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % msg if msg else '', sql, ',PARAMS:%s' % str(args) if args else ''))
+    def execute_query_one_value(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> object:
+        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % info if info else '', sql, ',PARAMS:%s' % str(args) if args else ''))
         self.db_config.update(dbconfig_kwargs)
         assert self.db_config.get('cursorclass') == DictCursor, 'execute_query_one_value only support DictCursor!!!'
         connection = pymysql.connect(**self.db_config)
@@ -72,8 +72,8 @@ class MySQLDb(object):
         finally:
             connection.close()
 
-    def execute_non_query(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs):
-        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % msg if msg else '', sql, ',PARAMS:%s' % str(args) if args else ''))
+    def execute_non_query(self, sql: str, args: list = None, info=None, **dbconfig_kwargs):
+        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % info if info else '', sql, ',PARAMS:%s' % str(args) if args else ''))
         self.db_config.update(dbconfig_kwargs)
         connection = pymysql.connect(**self.db_config)
         try:
@@ -85,8 +85,8 @@ class MySQLDb(object):
         finally:
             connection.close()
 
-    def execute_insert(self, sql: str, args: list = None, msg=None, **dbconfig_kwargs) -> int:
-        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % msg if msg else '', sql, ',PARAMS:%s' % str(args) if args else ''))
+    def execute_insert(self, sql: str, args: list = None, info=None, **dbconfig_kwargs) -> int:
+        logging.info('%sExecuting SQL:%s%s' % ('[%s]' % info if info else '', sql, ',PARAMS:%s' % str(args) if args else ''))
         self.db_config.update(dbconfig_kwargs)
         connection = pymysql.connect(**self.db_config)
         try:
