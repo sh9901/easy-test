@@ -248,16 +248,16 @@ class ServiceBase(object):
             else:
                 return self.host.rstrip('/') + path
 
-    def raise_exception(self, request, response: Response, should_raise=True, message=''):
+    def raise_exception(self, request, response: Response, should_success=True, message=''):
         """
         when a request fail, is it expected or should it raise an exception
         :param request:
         :param response:
-        :param should_raise:
+        :param should_success:
         :param message:
         :return:
         """
-        if should_raise:
+        if should_success:
             raise Exception('%s\n[REQUEST:<%s>]\n[RESPONSE:<%s-%s,%s>]' % (message, request, response.status_code, response.reason, response.text))
 
     # region 不推荐使用的url辅助方法
