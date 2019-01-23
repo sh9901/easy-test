@@ -25,12 +25,14 @@ def valid_hook_funcs(hook_funcs: Iterable = ()):
 
 
 class ServiceBase(object):
-    def __init__(self, host, vpath='', hook_funcs: Iterable = ()):
+    def __init__(self, host, vpath='', hook_funcs: Iterable = (), headers: dict = None, cookies: dict = None):
         valid_hook_funcs(hook_funcs)
         self.host = host
         self.vpath = vpath
         self.hook_funcs = hook_funcs
         self.hook_funcs = list(self.hook_funcs) if self.hook_funcs else []
+        self.headers = headers
+        self.cookies = cookies
 
         # 通用hooks-default enalbed
         self.hook_funcs.append([service_base_hooks.ensure_utf8_g])
@@ -72,6 +74,12 @@ class ServiceBase(object):
                 logging.info('Request.json  : %s' % kwargs.pop('json'))  # json or extracted from model load
             else:
                 kwargs.pop('json')
+
+        if not kwargs.get('headers'):
+            kwargs['headers'] = self.headers
+
+        if not kwargs.get('cookies'):
+            kwargs['cookies'] = self.cookies
 
         # files不作为requests独立参数使用,不会造成kwargs污染,不需要去掉<要遵守requests标准用法>
         logging.info('Request.files : %s' % kwargs['files']) if kwargs.get('files') else None
