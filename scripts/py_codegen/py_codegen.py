@@ -525,8 +525,8 @@ class PyCodeGen(object):
             if '$ref' in pro:
                 iref = pro['$ref']
                 iref_key = iref.lstrip('#/definitions/')
-                if iref_key == ref_key:
-                    continue  # 跳过自循环
+                # if iref_key == ref_key:
+                #     continue  # 跳过自循环
                 iref_class = self.get_ref_class(iref_key)
                 iref_file = self.get_ref_file(iref_class)
                 ibody['name'] = pro_key
@@ -536,14 +536,15 @@ class PyCodeGen(object):
                 ibody['type'] = iref_class
                 ibody['ref_file'] = iref_file
                 ibody['ref_fields'] = []
-                self.fill_ref_fields(ibody, iref_key)
+                if iref_key != ref_key:  # 跳过自循环
+                    self.fill_ref_fields(ibody, iref_key)
                 body['ref_fields'].append(ibody)
             elif 'type' in pro and pro['type'] == 'array':
                 if '$ref' in pro['items']:
                     iref = pro['items']['$ref']
                     iref_key = iref.lstrip('#/definitions/')
-                    if iref_key == ref_key:
-                        continue  # 跳过自循环
+                    # if iref_key == ref_key:
+                    #     continue  # 跳过自循环
                     iref_class = self.get_ref_class(iref_key)
                     iref_file = self.get_ref_file(iref_class)
                     ibody['name'] = pro_key
@@ -554,7 +555,8 @@ class PyCodeGen(object):
                     ibody['type'] = 'List[%s]' % iref_class
                     ibody['ref_file'] = iref_file
                     ibody['ref_fields'] = []
-                    self.fill_ref_fields(ibody, iref_key)
+                    if iref_key != ref_key:  # 跳过自循环
+                        self.fill_ref_fields(ibody, iref_key)
                     body['ref_fields'].append(ibody)
                 else:
                     type = pro['items']['type']
