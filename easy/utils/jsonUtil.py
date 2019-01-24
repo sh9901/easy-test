@@ -27,9 +27,21 @@ def pformat_json(json_dict: dict) -> str:
     return json.dumps(json_dict, indent=2, ensure_ascii=False, sort_keys=True)
 
 
-def pformat_resp(resp: Response) -> str:
+def pformat_resp(resp: Response) -> str:  # noqa
+    """
+    for print purpose, result could be truncated when to large(gt 256KByte)
+    :param resp: Response
+    :return: json like string
+    """
     try:
-        return json.dumps(resp.json(), indent=2, ensure_ascii=False, sort_keys=True)
+        resp_length = len(resp.text)
+        if resp_length <= 2 ** 10:
+            json_string = json.dumps(resp.json(), indent=2, ensure_ascii=False, sort_keys=True)
+        elif 2 ** 10 < resp_length <= 2 ** 18:
+            json_string = json.dumps(resp.json(), ensure_ascii=False, sort_keys=True)
+        else:
+            json_string = 'RESPONSE CONTENT TOO LONG TO DISPLAY, FOR SHORT(256 KByte): %s' % json.dumps(resp.json(), ensure_ascii=False, sort_keys=True)[:2 ** 18]
+        return json_string
     except Exception as e:
         logging.error('Try json format response exception:%s, use resp.text instead' % e)
         return resp.text
