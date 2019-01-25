@@ -35,9 +35,9 @@ def pformat_resp(resp: Response) -> str:  # noqa
     """
     try:
         resp_length = len(resp.text)
-        if resp_length <= 2 ** 10:
-            json_string = json.dumps(resp.json(), indent=2, ensure_ascii=False, sort_keys=True)
-        elif 2 ** 10 < resp_length <= 2 ** 18:
+        if resp_length <= 2 ** 18:
+            # json_string = json.dumps(resp.json(), indent=2, ensure_ascii=False, sort_keys=True)
+            # elif 2 ** 10 < resp_length <= 2 ** 18:
             json_string = json.dumps(resp.json(), ensure_ascii=False, sort_keys=True)
         else:
             json_string = 'RESPONSE CONTENT TOO LONG TO DISPLAY, FOR SHORT(256 KByte): %s' % json.dumps(resp.json(), ensure_ascii=False, sort_keys=True)[:2 ** 18]
