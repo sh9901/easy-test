@@ -199,6 +199,8 @@ class PyCodeGen(object):
 
                 parameters: list = self.build_parameters(method)
                 response200: dict = self.build_response200(method)
+                if 'ref_file' not in response200 or 'ref_class' not in response200:
+                    break  # unhandleable,skip
                 service_imports.add(
                     "from %s.%s.%s import %s" % (self.project_path_base, self.model_base, os.path.splitext(os.path.basename(response200['ref_file']))[0], response200['ref_class']))
 
