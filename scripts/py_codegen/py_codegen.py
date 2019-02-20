@@ -476,6 +476,8 @@ class PyCodeGen(object):
                             body['type'] = 'List[%s]' % swagger_type_to_python_type(type, format)
                         else:
                             pass
+                    elif 'type' in param['schema'] and param['schema']['type'] == 'object':
+                        body['type'] = "object"
                     else:  # tbd
                         pass
                     params.append(body)
