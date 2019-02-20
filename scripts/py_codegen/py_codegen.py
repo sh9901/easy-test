@@ -524,61 +524,69 @@ class PyCodeGen(object):
     # 递归ref - body
     def fill_ref_fields(self, body: dict, ref_key):
         ref = self.service_definitions.get(ref_key)
-        properties = ref.get('properties')
-        pro_keys = properties.keys()
-        for pro_key in pro_keys:
-            ibody = {}
-            pro = properties[pro_key]
-            if '$ref' in pro:
-                iref = pro['$ref']
-                iref_key = iref.lstrip('#/definitions/')
-                # if iref_key == ref_key:
-                #     continue  # 跳过自循环
-                iref_class = self.get_ref_class(iref_key)
-                iref_file = self.get_ref_file(iref_class)
-                ibody['name'] = pro_key
-                ibody['ref'] = iref
-                ibody['ref_key'] = iref_key
-                ibody['ref_class'] = iref_class
-                ibody['type'] = iref_class
-                ibody['ref_file'] = iref_file
-                ibody['ref_fields'] = []
-                if iref_key != ref_key:  # 跳过自循环
-                    self.fill_ref_fields(ibody, iref_key)
-                body['ref_fields'].append(ibody)
-            elif 'type' in pro and pro['type'] == 'array':
-                if '$ref' in pro['items']:
-                    iref = pro['items']['$ref']
+        if 'properties' in ref:
+            properties = ref.get('properties')
+            pro_keys = properties.keys()
+            for pro_key in pro_keys:
+                ibody = {}
+                pro = properties[pro_key]
+                if '$ref' in pro:
+                    iref = pro['$ref']
                     iref_key = iref.lstrip('#/definitions/')
                     # if iref_key == ref_key:
                     #     continue  # 跳过自循环
                     iref_class = self.get_ref_class(iref_key)
                     iref_file = self.get_ref_file(iref_class)
                     ibody['name'] = pro_key
-                    ibody['description'] = pro.get('description')
                     ibody['ref'] = iref
                     ibody['ref_key'] = iref_key
                     ibody['ref_class'] = iref_class
-                    ibody['type'] = 'List[%s]' % iref_class
+                    ibody['type'] = iref_class
                     ibody['ref_file'] = iref_file
                     ibody['ref_fields'] = []
                     if iref_key != ref_key:  # 跳过自循环
                         self.fill_ref_fields(ibody, iref_key)
                     body['ref_fields'].append(ibody)
+                elif 'type' in pro and pro['type'] == 'array':
+                    if '$ref' in pro['items']:
+                        iref = pro['items']['$ref']
+                        iref_key = iref.lstrip('#/definitions/')
+                        # if iref_key == ref_key:
+                        #     continue  # 跳过自循环
+                        iref_class = self.get_ref_class(iref_key)
+                        iref_file = self.get_ref_file(iref_class)
+                        ibody['name'] = pro_key
+                        ibody['description'] = pro.get('description')
+                        ibody['ref'] = iref
+                        ibody['ref_key'] = iref_key
+                        ibody['ref_class'] = iref_class
+                        ibody['type'] = 'List[%s]' % iref_class
+                        ibody['ref_file'] = iref_file
+                        ibody['ref_fields'] = []
+                        if iref_key != ref_key:  # 跳过自循环
+                            self.fill_ref_fields(ibody, iref_key)
+                        body['ref_fields'].append(ibody)
+                    else:
+                        type = pro['items']['type']
+                        format = pro['items'].get('format')
+                        ibody['name'] = pro_key
+                        ibody['type'] = 'List[%s]' % swagger_type_to_python_type(type, format)
+                        ibody['description'] = pro.get('description', '')
+                        body['ref_fields'].append(ibody)
                 else:
-                    type = pro['items']['type']
-                    format = pro['items'].get('format')
+                    type = pro['type']
+                    format = pro.get('format')
                     ibody['name'] = pro_key
-                    ibody['type'] = 'List[%s]' % swagger_type_to_python_type(type, format)
+                    ibody['type'] = swagger_type_to_python_type(type, format)
                     ibody['description'] = pro.get('description', '')
                     body['ref_fields'].append(ibody)
-            else:
-                type = pro['type']
-                format = pro.get('format')
-                ibody['name'] = pro_key
-                ibody['type'] = swagger_type_to_python_type(type, format)
-                ibody['description'] = pro.get('description', '')
-                body['ref_fields'].append(ibody)
+        elif 'type' in ref:
+            ibody = {}
+            ibody['type'] = swagger_type_to_python_type(ref['type'])
+            ibody['name'] = 'unknown_object_type_need_manual_update'
+            body['ref_fields'].append(ibody)
+        else:
+            print('UNKNOWN-SCENARIO')
 
     def get_ref_file(self, ref_class):
         ref_file_prefix = camel_case_to_under_score(ref_class)
