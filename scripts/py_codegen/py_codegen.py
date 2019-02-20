@@ -199,7 +199,8 @@ class PyCodeGen(object):
 
                 parameters: list = self.build_parameters(method)
                 response200: dict = self.build_response200(method)
-                service_imports.add("from %s.%s.%s import %s" % (self.project_path_base, self.model_base, os.path.splitext(os.path.basename(response200['ref_file']))[0], response200['ref_class']))
+                service_imports.add(
+                    "from %s.%s.%s import %s" % (self.project_path_base, self.model_base, os.path.splitext(os.path.basename(response200['ref_file']))[0], response200['ref_class']))
 
                 # 1. write parameters model
                 self.write_parameters(parameters)
@@ -478,6 +479,8 @@ class PyCodeGen(object):
                             pass
                     elif 'type' in param['schema'] and param['schema']['type'] == 'object':
                         body['type'] = "object"
+                    elif 'type' in param['schema'] and param['schema']['type'] == 'integer':
+                        body['type'] = 'int'
                     else:  # tbd
                         pass
                     params.append(body)
