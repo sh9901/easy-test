@@ -93,8 +93,6 @@ class PyCodeGen(object):
         self.service_base = args.service_base
         self.model_base = args.model_base
 
-        self.controller_real_files = {}
-        self.service_real_files = {}
         self.ref_real_file = {}
 
         if not self.code_base:
@@ -142,6 +140,9 @@ class PyCodeGen(object):
         self.service_paths: dict = j.get('paths')
         self.service_definitions: dict = j.get('definitions')
 
+        # TODO ① generate models
+
+        # ② generate controllers/services
         paths = self.service_paths.keys()
         for path in paths:
             if self.excluded_paths and path in self.excluded_paths:
@@ -150,6 +151,7 @@ class PyCodeGen(object):
                 continue
             self.current_path = path  # just for debug global evaluate
             print('PATH:', path)
+
             controller_version, controller_name = get_controller_name_from_path(path)
 
             controller_file_prefix = get_controller_file_prefix(controller_name)
@@ -158,22 +160,10 @@ class PyCodeGen(object):
             controller_class = controller_object_prefix + 'Controller'
             controller_file_base = controller_file_prefix + '_controller.py'
             controller_file = os.path.join(self.controller_base, controller_file_base)
-            if not controller_file in self.controller_real_files:
-                if not os.path.exists(controller_file):
-                    self.controller_real_files[controller_file] = controller_file
-                else:
-                    controller_file_base = controller_file_prefix + '_controller%s.py' % self.stamp
-                    self.controller_real_files[controller_file] = os.path.join(self.controller_base, controller_file_base)
 
             service_class = controller_object_prefix + 'Service'
             service_file_base = controller_file_prefix + '_service.py'
             service_file = os.path.join(self.service_base, service_file_base)
-            if not service_file in self.service_real_files:
-                if not os.path.exists(service_file):
-                    self.service_real_files[service_file] = service_file
-                else:
-                    service_file_base = controller_file_prefix + '_service%s.py' % self.stamp
-                    self.service_real_files[service_file] = os.path.join(self.service_base, service_file_base)
 
             path_content = self.service_paths[path]
             http_methods = path_content.keys()
