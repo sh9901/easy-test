@@ -246,8 +246,6 @@ class PyCodeGen(object):
 
         # TODO ② generate controllers
         for path in self.service_paths:
-            # if path != '/v1/mustang/manager/class/by_ids':
-            #     continue
             if self.excluded_paths and path in self.excluded_paths:
                 continue  # 跳过path排除列表
             if self.included_paths and path not in self.included_paths:
