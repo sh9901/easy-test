@@ -1,11 +1,13 @@
 import sys
 import os
+import re
 import shutil
 import argparse
 import json
 import time
 import requests
 from collections import namedtuple
+from typing import List
 
 sp = " "
 sp4 = sp * 4
@@ -14,9 +16,10 @@ sp12 = sp * 12
 sp16 = sp * 16
 
 Model = namedtuple('model', ['model_file', 'model_class'])
+Path = namedtuple('path', ['path_file', 'path_class'])
 
 
-def swagger_type_to_python_type(swagger_type, format=None):
+def swagger_type_to_python(swagger_type, format=None):
     if swagger_type == 'integer':
         return 'int'
     elif swagger_type == 'number':
@@ -31,16 +34,18 @@ def swagger_type_to_python_type(swagger_type, format=None):
     elif swagger_type == 'date-time':
         return '"str [datetime]"'
     else:
-        return swagger_type
+        return 'object'
 
 
 def camel_case_to_under_score(camel_case):
     return ''.join(map(lambda x: x if (x.islower() or x == '_' or str(x).isdigit()) else '_' + x.lower(), camel_case)).lstrip('_')
 
 
-def wrap_init_line(line, max_len):
+def wrap_def_line(line, max_len=120):
     if len(line) < max_len:
         return line
+
+    start = sp * (line.find('('))
     sections = line.split(',')
 
     wrapped_line = ''
@@ -54,17 +59,17 @@ def wrap_init_line(line, max_len):
             else:
                 wrapped_line += current_line + '\n'
                 current_line = ''
-                current_line += sp16 + section + ','
+                current_line += start + section + ','
                 is_first_row = False
         else:
-            current_line = sp16 + current_line if not current_line.startswith(sp16) else current_line
+            current_line = start + current_line if not current_line.startswith(start) else current_line
             try_len = len(current_line + section)
             if try_len < max_len:
                 current_line += section + ','
             else:
                 wrapped_line += current_line + '\n'
                 current_line = ''
-                current_line = sp16 + current_line if not current_line.startswith(sp16) else current_line
+                current_line = start + current_line if not current_line.startswith(start) else current_line
                 current_line += section + ','
 
     if current_line:
@@ -138,6 +143,25 @@ class PyCodeGen(object):
         model_class = ''.join([s.title() for s in model_file.split('_')])
         return Model(model_file, model_class)
 
+    def get_path_name(self, path):
+        parts = path.split(os.path.sep)
+        if re.match('^v[1-9]+$', parts[1]):
+            return ('_'.join(parts[2:]).replace('{', '').replace('}', '') + '_' + parts[1]).lower()
+        else:
+            return ('_'.join(parts[1:]).replace('{', '').replace('}', '')).lower()
+
+    def get_path_meta(self, path: str):
+        path_name = self.get_path_name(path)
+        print('PATH NAME:', path_name)
+        path_name_pieces = []
+        for piece in path_name.split('_'):
+            if piece not in path_name_pieces:
+                path_name_pieces.append(piece)
+
+        path_file = '_'.join(path_name_pieces)
+        path_class = ''.join([s.title() for s in path_file.split('_')])
+        return Path(path_file, path_class)
+
     def run(self):
         j = requests.get(self.swagger_doc).json()
 
@@ -194,11 +218,11 @@ class PyCodeGen(object):
                             fields.append('%s: List[%s] = None' % (field_name, item_model_meta.model_class))
                             lines.append('%sself.%s = %s' % (sp8, field_name, field_name))
                         else:  # 数组元素为其它
-                            _item_type = swagger_type_to_python_type(swagger_type=item_type, format=item_format)
+                            _item_type = swagger_type_to_python(swagger_type=item_type, format=item_format)
                             fields.append('%s: List[%s] = None' % (field_name, _item_type))
                             lines.append('%sself.%s = %s' % (sp8, field_name, field_name))
                     else:  # 其它
-                        _field_type = swagger_type_to_python_type(field_type, field_format)
+                        _field_type = swagger_type_to_python(field_type, field_format)
                         fields.append('%s: %s = None' % (field_name, _field_type))
                         lines.append('%sself.%s = %s' % (sp8, field_name, field_name))
 
@@ -206,7 +230,7 @@ class PyCodeGen(object):
                     sp8, '\n'.join(field_descriptions), sp8) if field_descriptions else None
 
                 init_row = init_row % ', '.join(fields)
-                wrapped_init_row = wrap_init_line(init_row, 130)
+                wrapped_init_row = wrap_def_line(init_row)
 
                 model_file = os.path.join(self.model_base, model_meta.model_file + '.py')
                 with open(model_file, 'w', encoding='utf8') as f_model:
@@ -221,6 +245,152 @@ class PyCodeGen(object):
                 print('***IGNORE***', model_key, '***IGNORE***\n')
 
         # TODO ② generate controllers
+        for path in self.service_paths:
+            # if path != '/v1/mustang/manager/class/by_ids':
+            #     continue
+            if self.excluded_paths and path in self.excluded_paths:
+                continue  # 跳过path排除列表
+            if self.included_paths and path not in self.included_paths:
+                continue  # 如果有指定处理的path列表，则跳过其它
+            self.current_path = path  # just for debug global evaluate
+            print('PATH:', path)
+
+            request_path = path
+
+            path_meta = self.get_path_meta(path)
+            controller_file = os.path.join('controller', path_meta.path_file + '_controller.py')
+            controller_class = path_meta.path_class + 'Controller'
+
+            controller_imports = {'from easy.base.service_base import ServiceBase'}
+            controller_class_row = 'class %s(ServiceBase):\n' % controller_class
+
+            controller_init = "%sdef __init__(self, host):\n" % sp4
+            controller_path_doc = sp8 + '"""%s"""\n' % path
+            controller_super = sp8 + 'super(%s, self).__init__(host=host)' % controller_class
+
+            controller_init_spec = wrap_def_line(controller_init) + controller_path_doc + wrap_def_line(controller_super)
+
+            controller_methods = []
+            methods = self.service_paths.get(path)
+            for method in methods.keys():
+                method_content = methods.get(method)
+                summary = method_content.get('summary')
+                operationId = method_content.get('operationId')
+                parameters: List[dict] = method_content.get('parameters')
+                responses = method_content.get('responses')
+                response200: dict = responses.get('200')  # presume always exist.
+                response200_schema = response200.get('schema')
+                method_field_descriptions = []
+
+                if '$ref' in response200_schema:
+                    resp_ref_meta = self.get_model_meta(response200_schema['$ref'].lstrip('#/definitions/'))
+                    controller_imports.add('from ..model.%s import %s' % (resp_ref_meta.model_file, resp_ref_meta.model_class))
+                else:
+                    resp_ref_meta = None
+
+                path_params = []
+                path_param_names = []
+                query_params = []
+                load_param_name = load_param = None
+                json_param_name = json_param = None
+                header_params = []
+
+                if parameters:
+                    for parameter in parameters:
+                        param_name = parameter.get('name')
+                        param_description = parameter.get('description')
+                        param_type = parameter.get('type')
+                        param_format = parameter.get('format')
+                        if param_name != param_description:
+                            method_field_descriptions.append('%s:param %s: %s' % (sp8, param_name, param_description))
+                        if parameter.get('in') == 'body':
+                            param_schema = parameter.get('schema')
+                            if '$ref' in param_schema:
+                                ref_meta = self.get_model_meta(param_schema['$ref'].lstrip('#/definitions/'))
+                                ref_file = ref_meta.model_file
+                                ref_class = ref_meta.model_class
+                                controller_imports.add('from ..model.%s import %s' % (ref_file, ref_class))
+                                load_param_name = param_name
+                                load_param = "%s: %s = None" % (param_name, ref_class)
+                            elif 'type' in param_schema and param_schema['type'] == 'array':
+                                controller_imports.add('from typing import List')
+                                items: dict = param_schema.get('items')
+                                if items:
+                                    item_type = items.get('type')
+                                    item_format = items.get('format')
+                                    json_param_name = param_name
+                                    json_param = '%s: List[%s] = None' % (
+                                        param_name, swagger_type_to_python(item_type, item_format))
+                        elif parameter.get('in') == 'path':
+                            request_path = re.sub('{%s}' % param_name, '%s', path)
+                            path_param_names.append(param_name)
+                            path_params.append('%s: %s = None' % (param_name, swagger_type_to_python(param_type, param_format)))
+                        elif parameter.get('in') == 'query':
+                            query_params.append("'%s': None" % param_name)
+                        elif parameter.get('in') == 'formData':
+                            pass
+                        elif parameter.get('in') == 'header':
+                            header_params.append("'%s': None" % param_name)
+                        else:
+                            raise Exception('parameter "in" type[%s] unknown' % parameter)
+
+                controller_method = "%sdef %s(self" % (sp4, operationId)
+
+                if path_params:
+                    controller_method += ', ' + ', '.join(path_params)
+                if load_param:
+                    controller_method += ', %s' % load_param
+                if json_param:
+                    controller_method += ', %s' % json_param
+                if query_params:
+                    controller_method += ', ' + 'params={%s}' % ','.join(query_params)
+                if header_params:
+                    controller_method += ', ' + 'headers={%s}' % ','.join(header_params)
+
+                controller_method += ', **kwargs):\n'  # controller声明结束
+
+                doc_str = ''
+                if summary:
+                    doc_str = sp8 + '"""\n' + sp8 + summary
+                if method_field_descriptions:
+                    doc_str += '\n'
+                    doc_str += '\n'.join(method_field_descriptions)
+                if resp_ref_meta:
+                    doc_str += '\n%s:return: %s' % (sp8, 'response with %s' % resp_ref_meta.model_class)
+                if doc_str:
+                    doc_str += '\n%s"""' % sp8
+
+                controller_method += doc_str
+
+                request_line = '\n' + sp8 + "return self.%s('%s'" % (method, request_path)
+                if path_param_names:
+                    request_line += " %% (%s)" % (','.join(path_param_names)) + ','
+                else:
+                    request_line += ','
+
+                if load_param_name:
+                    request_line += sp + 'load=' + load_param_name + ','
+                if json_param_name:
+                    request_line += sp + 'json=' + json_param_name + ','
+                if query_params:
+                    request_line += ' params=params,'
+                if header_params:
+                    request_line += ' headers=headers,'
+                if resp_ref_meta:
+                    request_line += ' M=%s.to_model,' % resp_ref_meta.model_class
+                request_line += ' **kwargs)'
+
+                request_line = wrap_def_line(request_line)
+                controller_method += request_line
+                controller_methods.append(controller_method)
+
+            with open(controller_file, 'w') as f_controller:
+                f_controller.writelines('\n'.join(controller_imports))
+                f_controller.writelines('\n' * 3)
+                f_controller.writelines(controller_class_row)
+                f_controller.writelines(controller_init_spec)
+                f_controller.writelines('\n' * 2)
+                f_controller.writelines('\n\n'.join(controller_methods))
 
 
 def __get_run_args():
