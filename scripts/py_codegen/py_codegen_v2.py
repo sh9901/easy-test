@@ -3,9 +3,8 @@ import os
 import shutil
 import argparse
 import json
-import re
+import time
 import requests
-from datetime import datetime
 from collections import namedtuple
 
 sp = " "
@@ -15,22 +14,6 @@ sp12 = sp * 12
 sp16 = sp * 16
 
 Model = namedtuple('model', ['model_file', 'model_class'])
-
-
-def try_get_swagger_doc_from_readme(readme_path):
-    if not os.path.exists(readme_path):
-        print('')
-        sys.exit(-1)
-    else:
-        pattern = re.compile("(\[api_?doc.+\]|\[swagger_?doc.+\]){1}\((http://.*)\)$", re.IGNORECASE)
-        with open(readme_path) as f:
-            lines = f.readlines()
-            for line in lines:
-                matches = pattern.match(line)
-                if matches:
-                    return matches.groups()[-1]
-        print('')
-        sys.exit(-1)
 
 
 def swagger_type_to_python_type(swagger_type, format=None):
@@ -71,7 +54,7 @@ def wrap_init_line(line, max_len):
             else:
                 wrapped_line += current_line + '\n'
                 current_line = ''
-                current_line += section + ','
+                current_line += sp16 + section + ','
                 is_first_row = False
         else:
             current_line = sp16 + current_line if not current_line.startswith(sp16) else current_line
@@ -93,26 +76,13 @@ def wrap_init_line(line, max_len):
 class PyCodeGen(object):
 
     def __init__(self, args):
-        # 如果生成的文件已存在，则新建版本
         self.swagger_doc = args.swagger_doc
-        self.project_path_base = args.project_path_base
         self.code_base = args.code_base
-        self.included_paths = args.included_paths
-        self.excluded_paths = args.excluded_paths
-
         self.controller_base = args.controller_base
         self.service_base = args.service_base
         self.model_base = args.model_base
-
-        self.ref_real_file = {}
-
-        if not self.code_base:
-            # 如果没有指定代码目标目录，则取当前目录
-            self.code_base = os.getcwd()
-            readme_path = os.path.join(self.code_base, 'readme.md')
-            if not self.swagger_doc and os.path.exists(readme_path):
-                # 如果没有指定swagger_doc，则尝试从当前目录下readme中尝试查找
-                self.swagger_doc = try_get_swagger_doc_from_readme(readme_path)
+        self.included_paths = args.included_paths
+        self.excluded_paths = args.excluded_paths
 
         if self.swagger_doc and self.code_base:
             # 如果代码目录、swagger doc地址已获取，则初始化项目目录结构
@@ -122,7 +92,24 @@ class PyCodeGen(object):
             sys.exit(-1)
 
     def init_base_dir(self, keep):
-        if not keep:  # 如果不保留老版本则先删除
+        if keep:  # 如果保留老版本则先备份
+            backups = "backups"
+            backupstamp = '%Y%m%d%H%M%S_'
+            if not os.path.exists(backups):
+                os.mkdir(backups)
+            if os.path.exists(self.controller_base):
+                controoler_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.controller_base)))
+                controller_backup = os.path.join(backups, controoler_ctime + self.controller_base)
+                shutil.move(self.controller_base, controller_backup)
+            if os.path.exists(self.service_base):
+                service_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.service_base)))
+                service_backup = os.path.join(backups, service_ctime + self.service_base)
+                shutil.move(self.service_base, service_backup)
+            if os.path.exists(self.model_base):
+                model_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.model_base)))
+                model_backup = os.path.join(backups, model_ctime + self.model_base)
+                shutil.move(self.model_base, model_backup)
+        else:  # 如果不保留老版本则删除
             if os.path.exists(self.controller_base):
                 shutil.rmtree(self.controller_base)
             if os.path.exists(self.service_base):
@@ -140,11 +127,14 @@ class PyCodeGen(object):
         if not os.path.exists(self.model_base):
             os.mkdir(self.model_base)
             with open(os.path.join(self.model_base, '__init__.py'), 'w') as model_init: pass
+        if not os.path.exists('__init__.py'):
+            with open('__init__.py', 'w') as init: pass
 
     def get_model_meta(self, model_key: str):
         s1 = model_key.replace('«', '_').replace('»', '').replace(',', '')
         s2 = camel_case_to_under_score(s1)
-        model_file = s2.replace('__', '_')
+        model_file = s2.replace('__', '_').replace('data_result_paged_list', 'drpl').replace('data_result_list', 'drl').replace(
+            'data_result', 'dr').replace('paged_list', 'pl')
         model_class = ''.join([s.title() for s in model_file.split('_')])
         return Model(model_file, model_class)
 
@@ -207,7 +197,6 @@ class PyCodeGen(object):
                             _item_type = swagger_type_to_python_type(swagger_type=item_type, format=item_format)
                             fields.append('%s: List[%s] = None' % (field_name, _item_type))
                             lines.append('%sself.%s = %s' % (sp8, field_name, field_name))
-
                     else:  # 其它
                         _field_type = swagger_type_to_python_type(field_type, field_format)
                         fields.append('%s: %s = None' % (field_name, _field_type))
@@ -231,12 +220,14 @@ class PyCodeGen(object):
             else:
                 print('***IGNORE***', model_key, '***IGNORE***\n')
 
+        # TODO ② generate controllers
+
 
 def __get_run_args():
     arg_parser = argparse.ArgumentParser('')
     arg_parser.add_argument('-A', '--swagger-doc', action='store', dest='swagger_doc',
                             help='swagger json文档url地址,如: http://app.com/v2/api-docs')
-    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', help='生成代码目标目录')
+    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录')
     arg_parser.add_argument('-M', '--model-base', action='store', dest='model_base', default='model', help='model目标目录')
     arg_parser.add_argument('-C', '--controller-base', action='store', dest='controller_base', default='controller',
                             help='controller目标目录')
@@ -247,10 +238,9 @@ def __get_run_args():
 
     args = arg_parser.parse_args()
 
-    args.code_base = os.getcwd() if not args.code_base else args.code_base
-
+    assert os.getcwd() == args.code_base, '为防止误操作导致覆盖，需提前 cd 的操作目录，--code-base 参数必须提供且与当前目录一致。\ncurrent-dir：%s, ' \
+                                          '\n--code-base：%s' % (os.getcwd(), args.code_base)
     assert os.path.split(args.code_base)[-2].endswith('autotest')
-    args.project_path_base = 'autotest.' + os.path.split(args.code_base)[-1]
 
     config_file = os.path.join(args.code_base, 'pycodegenconfig.json')
     if os.path.exists(config_file):
