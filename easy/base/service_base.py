@@ -4,7 +4,7 @@ import logging
 import warnings
 import urllib.parse
 import requests
-from collections import Iterable, Sized
+from collections.abc import Iterable, Sized
 from copy import deepcopy
 from requests.models import Response
 from easy.base.model_base import ModelBase
@@ -115,7 +115,7 @@ class ServiceBase(object):
                 # set model format object back to response
                 setattr(resp, 'model', json.loads(json.dumps(resp.json(), ensure_ascii=False), object_hook=model_hook))
             except Exception as e:
-                logging.warning('attache resp content to model attr failed, %s' % e)
+                logging.warning('attach resp content to model attr failed, %s' % e)
                 setattr(resp, 'model', None)
         else:
             setattr(resp, 'model', None)  # 没有自定义object_hook则model不取值
