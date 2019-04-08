@@ -106,10 +106,10 @@ class PyCodeGen(object):
                 controoler_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.controller_base)))
                 controller_backup = os.path.join(backups, controoler_ctime + self.controller_base)
                 shutil.move(self.controller_base, controller_backup)
-            if os.path.exists(self.service_base):
-                service_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.service_base)))
-                service_backup = os.path.join(backups, service_ctime + self.service_base)
-                shutil.move(self.service_base, service_backup)
+            # if os.path.exists(self.service_base):
+            #     service_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.service_base)))
+            #     service_backup = os.path.join(backups, service_ctime + self.service_base)
+            #     shutil.move(self.service_base, service_backup)
             if os.path.exists(self.model_base):
                 model_ctime = time.strftime(backupstamp, time.localtime(os.path.getctime(self.model_base)))
                 model_backup = os.path.join(backups, model_ctime + self.model_base)
@@ -117,8 +117,8 @@ class PyCodeGen(object):
         else:  # 如果不保留老版本则删除
             if os.path.exists(self.controller_base):
                 shutil.rmtree(self.controller_base)
-            if os.path.exists(self.service_base):
-                shutil.rmtree(self.service_base)
+            # if os.path.exists(self.service_base):
+            #     shutil.rmtree(self.service_base)
             if os.path.exists(self.model_base):
                 shutil.rmtree(self.model_base)
 
@@ -126,9 +126,9 @@ class PyCodeGen(object):
         if not os.path.exists(self.controller_base):
             os.mkdir(self.controller_base)
             with open(os.path.join(self.controller_base, '__init__.py'), 'w') as controller_init: pass
-        if not os.path.exists(self.service_base):
-            os.mkdir(self.service_base)
-            with open(os.path.join(self.service_base, '__init__.py'), 'w') as  service_init: pass
+        # if not os.path.exists(self.service_base):
+        #     os.mkdir(self.service_base)
+        #     with open(os.path.join(self.service_base, '__init__.py'), 'w') as  service_init: pass
         if not os.path.exists(self.model_base):
             os.mkdir(self.model_base)
             with open(os.path.join(self.model_base, '__init__.py'), 'w') as model_init: pass
@@ -168,18 +168,18 @@ class PyCodeGen(object):
         self.service_info: dict = j.get('info')
         self.service_host = j.get('host')
         self.base_path = j.get('basePath')
-        self.service_paths: dict = j.get('paths')
-        self.service_definitions: dict = j.get('definitions')
+        self.api_paths: dict = j.get('paths')
+        self.model_definitions: dict = j.get('definitions')
 
         # ① generate models
-        for model_key in self.service_definitions.keys():
+        for model_key in self.model_definitions.keys():
             model_meta = self.get_model_meta(model_key)
             print('Model Key:', model_key)
             print('Model File:', model_meta.model_file)
             print('Model Class:', model_meta.model_class)
             print()
 
-            model: dict = self.service_definitions.get(model_key)
+            model: dict = self.model_definitions.get(model_key)
 
             import_rows = {'from easy.base.model_base import ModelBase'}
             class_row = "class %s(ModelBase):\n" % model_meta.model_class
@@ -238,12 +238,13 @@ class PyCodeGen(object):
                     f_model.writelines(wrapped_init_row)
                     f_model.writelines(description_content) if description_content else None
                     f_model.writelines('\n'.join(lines))
+                    f_model.writelines('\n')
 
             else:
                 print('***IGNORE***', model_key, '***IGNORE***\n')
 
         # TODO ② generate controllers
-        for path in self.service_paths:
+        for path in self.api_paths:
             if self.excluded_paths and path in self.excluded_paths:
                 continue  # 跳过path排除列表
             if self.included_paths and path not in self.included_paths:
@@ -271,7 +272,7 @@ class PyCodeGen(object):
             controller_init_spec = wrap_def_line(controller_init) + controller_path_doc + wrap_def_line(controller_super)
 
             controller_methods = []
-            methods = self.service_paths.get(path)
+            methods = self.api_paths.get(path)
             for method in methods.keys():
                 method_content = methods.get(method)
                 summary = method_content.get('summary')
@@ -391,6 +392,7 @@ class PyCodeGen(object):
                 f_controller.writelines(controller_init_spec)
                 f_controller.writelines('\n' * 2)
                 f_controller.writelines('\n\n'.join(controller_methods))
+                f_controller.writelines('\n')
 
 
 def __get_run_args():
@@ -410,8 +412,7 @@ def __get_run_args():
 
     assert os.getcwd() == args.code_base, '为防止误操作导致覆盖，需提前 cd 的操作目录，--code-base 参数必须提供且与当前目录一致。\ncurrent-dir：%s, ' \
                                           '\n--code-base：%s' % (os.getcwd(), args.code_base)
-    assert os.path.split(args.code_base)[-2].endswith('autotest')
-
+    # assert os.path.split(args.code_base)[-2].endswith('autotest')
     config_file = os.path.join(args.code_base, 'pycodegenconfig.json')
     if os.path.exists(config_file):
         with open(config_file) as f:
