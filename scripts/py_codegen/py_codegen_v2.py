@@ -45,7 +45,7 @@ def wrap_def_line(line, max_len=120):
     if len(line) < max_len:
         return line
 
-    start = sp * (line.find('('))
+    start = sp * (line.lstrip('\n').find('('))
     sections = line.split(',')
 
     wrapped_line = ''
@@ -152,7 +152,6 @@ class PyCodeGen(object):
 
     def get_path_meta(self, path: str):
         path_name = self.get_path_name(path)
-        print('PATH NAME:', path_name)
         path_name_pieces = []
         for piece in path_name.split('_'):
             if piece not in path_name_pieces:
@@ -175,9 +174,9 @@ class PyCodeGen(object):
         # ① generate models
         for model_key in self.service_definitions.keys():
             model_meta = self.get_model_meta(model_key)
-            print(model_key)
-            print(model_meta.model_file)
-            print(model_meta.model_class)
+            print('Model Key:', model_key)
+            print('Model File:', model_meta.model_file)
+            print('Model Class:', model_meta.model_class)
             print()
 
             model: dict = self.service_definitions.get(model_key)
@@ -189,7 +188,6 @@ class PyCodeGen(object):
             lines = []
             field_descriptions = []
 
-            print(model_key)
             properties: dict = model.get('properties')
             if properties:
                 for field_name in properties.keys():
@@ -251,11 +249,15 @@ class PyCodeGen(object):
             if self.included_paths and path not in self.included_paths:
                 continue  # 如果有指定处理的path列表，则跳过其它
             self.current_path = path  # just for debug global evaluate
-            print('PATH:', path)
+            print('PATH Key:', path)
 
             request_path = path
 
             path_meta = self.get_path_meta(path)
+            print('PATH File:', path_meta.path_file)
+            print('PATH Class:', path_meta.path_class)
+            print()
+
             controller_file = os.path.join('controller', path_meta.path_file + '_controller.py')
             controller_class = path_meta.path_class + 'Controller'
 
