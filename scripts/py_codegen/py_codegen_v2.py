@@ -82,6 +82,7 @@ class PyCodeGen(object):
 
     def __init__(self, args):
         self.swagger_doc = args.swagger_doc
+        self.api_base = args.api_base
         self.code_base = args.code_base
         self.controller_base = args.controller_base
         self.service_base = args.service_base
@@ -254,7 +255,10 @@ class PyCodeGen(object):
 
             request_path = path
 
-            path_meta = self.get_path_meta(path)
+            if self.api_base:  # 缩短 controllers 文件和类名
+                self.current_path = self.current_path.replace(self.api_base, '')
+
+            path_meta = self.get_path_meta(self.current_path)
             print('PATH File:', path_meta.path_file)
             print('PATH Class:', path_meta.path_class)
             print()
@@ -357,7 +361,7 @@ class PyCodeGen(object):
                     doc_str += '\n'
                     doc_str += '\n'.join(method_field_descriptions)
                 if resp_ref_meta:
-                    doc_str += '\n%s:return: %s' % (sp8, 'response with %s' % resp_ref_meta.model_class)
+                    doc_str += '\n%s:return: %s' % (sp8, 'response with model: %s' % resp_ref_meta.model_class)
                 if doc_str:
                     doc_str += '\n%s"""' % sp8
 
@@ -377,8 +381,8 @@ class PyCodeGen(object):
                     request_line += ' params=params,'
                 if header_params:
                     request_line += ' headers=headers,'
-                if resp_ref_meta:
-                    request_line += ' M=%s.to_model,' % resp_ref_meta.model_class
+                if resp_ref_meta:  # controller中使用默认（swagger）model 处理，可以在调用处（service 中）使用'M=Model.to_model'覆盖
+                    request_line += ' model_hook=%s.to_model,' % resp_ref_meta.model_class
                 request_line += ' **kwargs)'
 
                 request_line = wrap_def_line(request_line)
@@ -399,6 +403,8 @@ def __get_run_args():
     arg_parser = argparse.ArgumentParser('')
     arg_parser.add_argument('-A', '--swagger-doc', action='store', dest='swagger_doc',
                             help='swagger json文档url地址,如: http://app.com/v2/api-docs')
+    arg_parser.add_argument('--api-base', action='store', default='', dest='api_base',
+                            help='在controller文件和类名中忽略该字符串，如：--api-base=/a/b')
     arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录')
     arg_parser.add_argument('-M', '--model-base', action='store', dest='model_base', default='model', help='model目标目录')
     arg_parser.add_argument('-C', '--controller-base', action='store', dest='controller_base', default='controller',
@@ -418,6 +424,7 @@ def __get_run_args():
         with open(config_file) as f:
             config: dict = json.load(f)
             args.swagger_doc = config['swagger_doc'] if not args.swagger_doc and 'swagger_doc' in config else args.swagger_doc
+            args.api_base = config['api_base'] if not args.api_base and 'api_base' in config else args.api_base
             args.model_base = config['model_base'] if not args.model_base and 'model_base' in config else args.model_base
             args.controller_base = config['controller_base'] if not args.controller_base and config.get(
                 'controller_base') else args.controller_base
