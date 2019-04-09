@@ -8,7 +8,7 @@ from collections.abc import Iterable, Sized
 from copy import deepcopy
 from requests.models import Response
 from easy.base.model_base import ModelBase
-from . import service_base_hooks
+from . import service_hooks
 from pytest_salt import case
 
 absolute_http_url_regexp = re.compile(r"^https?://", re.I)
@@ -35,9 +35,9 @@ class ServiceBase(object):
         self.cookies = cookies
 
         # 通用hooks-default enalbed
-        self.hook_funcs.append([service_base_hooks.ensure_utf8_g])
-        self.hook_funcs.append([service_base_hooks.check_response_in_time_g, 10])
-        self.hook_funcs.append([service_base_hooks.print_response_info_g])
+        self.hook_funcs.append([service_hooks.ensure_utf8_g])
+        self.hook_funcs.append([service_hooks.check_response_in_time_g, 10])
+        self.hook_funcs.append([service_hooks.print_response_info_g])
 
         # Only suitable for positives.disable by default
         # self.hook_funcs.append([service_base_hooks.check_http_code_g, 200])
@@ -140,19 +140,24 @@ class ServiceBase(object):
                     if (func[0].__name__, None) in ignored_funcs and str(func[-1]).lower() == 'ignore':
                         continue
                     elif (func[0].__name__, None) in ignored_funcs:
-                        logging.info('Hook Ignored  : %s::%s with args:[%s] ignored by user.' % (func[0].__module__, func[0].__name__, '|'.join([str(x) for x in func[1:]])))
+                        logging.info('Hook Ignored  : %s::%s with args:[%s] ignored by user.' % (
+                            func[0].__module__, func[0].__name__, '|'.join([str(x) for x in func[1:]])))
                         continue
-                    elif (func[0].__name__, '|'.join([str(x) for x in func[1:-1]])) in ignored_funcs and str(func[-1]).lower() == 'xignore':
+                    elif (func[0].__name__, '|'.join([str(x) for x in func[1:-1]])) in ignored_funcs and str(
+                            func[-1]).lower() == 'xignore':
                         continue
                     elif (func[0].__name__, '|'.join([str(x) for x in func[1:-1]])) in ignored_funcs:
-                        logging.info('Hook Ignored  : %s::%s with args:[%s] xignored by user.' % (func[0].__module__, func[0].__name__, '|'.join([str(x) for x in func[1:]])))
+                        logging.info('Hook Ignored  : %s::%s with args:[%s] xignored by user.' % (
+                            func[0].__module__, func[0].__name__, '|'.join([str(x) for x in func[1:]])))
 
                     if (func[0].__name__, '|'.join([str(x) for x in func[1:]])) not in hooked_funcs:  # 检查该hook+args是否已经执行过
-                        logging.info('Hook Executing: %s::%s with args:[%s]' % (func[0].__module__, func[0].__name__, ','.join([str(x) for x in func[1:]])))
+                        logging.info('Hook Executing: %s::%s with args:[%s]' % (
+                            func[0].__module__, func[0].__name__, ','.join([str(x) for x in func[1:]])))
                         func[0](resp, *func[1:])  # 执行hook
                         hooked_funcs.add((func[0].__name__, '|'.join([str(x) for x in func[1:]])))  # hook+str(args)记入执行记录
                     else:
-                        logging.info('Hook Skipped  : %s::%s with args:[%s] duplicated, skip.' % (func[0].__module__, func[0].__name__, ','.join([str(x) for x in func[1:]])))
+                        logging.info('Hook Skipped  : %s::%s with args:[%s] duplicated, skip.' % (
+                            func[0].__module__, func[0].__name__, ','.join([str(x) for x in func[1:]])))
         except Exception as e:
             raise Exception('Hook func [%s::%s] with args:[%s] FAILURE [REASON: %s] of resp:%s',
                             (func[0].__module__, func[0].__name__, ','.join([str(x) for x in func[1:]]), e, resp.text))
@@ -266,11 +271,13 @@ class ServiceBase(object):
         :return:
         """
         if should_success:
-            raise Exception('%s\n[REQUEST:<%s>]\n[RESPONSE:<%s-%s,%s>]' % (message, request, response.status_code, response.reason, response.text))
+            raise Exception(
+                '%s\n[REQUEST:<%s>]\n[RESPONSE:<%s-%s,%s>]' % (message, request, response.status_code, response.reason, response.text))
 
     def check_http_code(self, request, response: Response, expected_http_code=200):
         if response.status_code != expected_http_code:
-            self.raise_exception(request, response, should_success=True, message='检查httpcode：%s值与期望：%s不匹配' % (response.status_code, expected_http_code))
+            self.raise_exception(request, response, should_success=True,
+                                 message='检查httpcode：%s值与期望：%s不匹配' % (response.status_code, expected_http_code))
 
     # region 不推荐使用的url辅助方法
     def build_url(self, path, path_param_list=None, query_params: dict = None, ensure_slash=False):
