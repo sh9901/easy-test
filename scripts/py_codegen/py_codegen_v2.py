@@ -203,8 +203,11 @@ class PyCodeGen(object):
 
                     if field_ref:  # 引用对象
                         ref_model_meta = self.get_model_meta(field_ref.lstrip('#/definitions/'))
-                        import_rows.add('from .%s import %s' % (ref_model_meta.model_file, ref_model_meta.model_class))
-                        fields.append('%s: %s = None' % (field_name, ref_model_meta.model_class))
+                        if ref_model_meta.model_file != model_meta.model_file and ref_model_meta.model_class != model_meta.model_class:
+                            import_rows.add('from .%s import %s' % (ref_model_meta.model_file, ref_model_meta.model_class))
+                            fields.append('%s: %s = None' % (field_name, ref_model_meta.model_class))
+                        else:  # 兼容类型递归引用自己
+                            fields.append('%s: "%s" = None' % (field_name, ref_model_meta.model_class))
                         lines.append('%sself.%s = %s' % (sp8, field_name, field_name))
                     elif field_type == 'array':  # 引用数组
                         import_rows.add('from typing import List')
@@ -213,8 +216,12 @@ class PyCodeGen(object):
                         item_format: str = field['items'].get('format')
                         if item_ref:  # 数组类型为对象
                             item_model_meta = self.get_model_meta(item_ref.lstrip('#/definitions/'))
-                            import_rows.add('from .%s import %s' % (item_model_meta.model_file, item_model_meta.model_class))
-                            fields.append('%s: List[%s] = None' % (field_name, item_model_meta.model_class))
+                            if item_model_meta.model_file != model_meta.model_file and \
+                                    item_model_meta.model_class != model_meta.model_class:
+                                import_rows.add('from .%s import %s' % (item_model_meta.model_file, item_model_meta.model_class))
+                                fields.append('%s: List[%s] = None' % (field_name, item_model_meta.model_class))
+                            else:  # 兼容类型递归引用自己
+                                fields.append('%s: List["%s"] = None' % (field_name, item_model_meta.model_class))
                             lines.append('%sself.%s = %s' % (sp8, field_name, field_name))
                         else:  # 数组元素为其它
                             _item_type = swagger_type_to_python(swagger_type=item_type, format=item_format)
@@ -230,6 +237,9 @@ class PyCodeGen(object):
 
                 init_row = init_row % ', '.join(fields)
                 wrapped_init_row = wrap_def_line(init_row)
+
+                import_rows = list(import_rows)
+                import_rows.sort()  # set 无序导致import 出现 gitdiff
 
                 model_file = os.path.join(self.model_base, model_meta.model_file + '.py')
                 with open(model_file, 'w', encoding='utf8') as f_model:
@@ -388,6 +398,9 @@ class PyCodeGen(object):
                 request_line = wrap_def_line(request_line)
                 controller_method += request_line
                 controller_methods.append(controller_method)
+
+            controller_imports = list(controller_imports)
+            controller_imports.sort()  # set 无序导致import 出现 gitdiff
 
             with open(controller_file, 'w') as f_controller:
                 f_controller.writelines('\n'.join(controller_imports))
