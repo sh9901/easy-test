@@ -8,7 +8,7 @@ setup(name='easy-test',
       url='http://qa.yeshj.com',
       packages=find_packages(),
       keywords='requests api test easy',
-      entry_points={"console_scripts": ["pycodegen=scripts.py_codegen.py_codegen:main"]},
+      entry_points={"console_scripts": ["pycodegen=scripts.py_codegen.py_codegen_v2:main"]},
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: QA Engineers / Developers',

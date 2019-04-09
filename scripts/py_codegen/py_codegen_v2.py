@@ -405,7 +405,7 @@ def __get_run_args():
                             help='swagger json文档url地址,如: http://app.com/v2/api-docs')
     arg_parser.add_argument('--api-base', action='store', default='', dest='api_base',
                             help='在controller文件和类名中忽略该字符串，如：--api-base=/a/b')
-    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录')
+    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录绝对路径')
     arg_parser.add_argument('-M', '--model-base', action='store', dest='model_base', default='model', help='model目标目录')
     arg_parser.add_argument('-C', '--controller-base', action='store', dest='controller_base', default='controller',
                             help='controller目标目录')
@@ -416,7 +416,7 @@ def __get_run_args():
 
     args = arg_parser.parse_args()
 
-    assert os.getcwd() == args.code_base, '为防止误操作导致覆盖，需提前 cd 的操作目录，--code-base 参数必须提供且与当前目录一致。\ncurrent-dir：%s, ' \
+    assert os.getcwd() == args.code_base, '为防止误操作导致覆盖，需提前 cd 的操作目录，--code-base 参数必须提供且与当前目录一致[绝对路径]。\ncurrent-dir：%s, ' \
                                           '\n--code-base：%s' % (os.getcwd(), args.code_base)
     # assert os.path.split(args.code_base)[-2].endswith('autotest')
     config_file = os.path.join(args.code_base, 'pycodegenconfig.json')
