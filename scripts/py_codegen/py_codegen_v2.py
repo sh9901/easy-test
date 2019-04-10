@@ -294,7 +294,10 @@ class PyCodeGen(object):
                 parameters: List[dict] = method_content.get('parameters')
                 responses = method_content.get('responses')
                 response200: dict = responses.get('200')  # presume always exist.
-                response200_schema = response200.get('schema')
+                if 'schema' in response200:
+                    response200_schema = response200.get('schema')
+                else:
+                    continue  # response200时没有 schema 存在
                 method_field_descriptions = []
 
                 if '$ref' in response200_schema:
@@ -337,7 +340,7 @@ class PyCodeGen(object):
                                     json_param = '%s: List[%s] = None' % (
                                         param_name, swagger_type_to_python(item_type, item_format))
                         elif parameter.get('in') == 'path':
-                            request_path = re.sub('{%s}' % param_name, '%s', path)
+                            request_path = re.sub('{%s}' % param_name, '%s', request_path)
                             path_param_names.append(param_name)
                             path_params.append('%s: %s = None' % (param_name, swagger_type_to_python(param_type, param_format)))
                         elif parameter.get('in') == 'query':
@@ -358,7 +361,7 @@ class PyCodeGen(object):
                 if json_param:
                     controller_method += ', %s' % json_param
                 if query_params:
-                    controller_method += ', ' + 'params={%s}' % ','.join(query_params)
+                    controller_method += ', ' + 'params={%s}' % ', '.join(query_params)
                 if header_params:
                     controller_method += ', ' + 'headers={%s}' % ','.join(header_params)
 
@@ -379,7 +382,7 @@ class PyCodeGen(object):
 
                 request_line = '\n' + sp8 + "return self.%s('%s'" % (method, request_path)
                 if path_param_names:
-                    request_line += " %% (%s)" % (','.join(path_param_names)) + ','
+                    request_line += " %% (%s)" % (', '.join(path_param_names)) + ','
                 else:
                     request_line += ','
 
