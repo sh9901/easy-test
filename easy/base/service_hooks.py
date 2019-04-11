@@ -24,13 +24,14 @@ def ensure_utf8_g(resp: Response):
 # TODO 检查http_code=200是否加入默认检查TBD
 def check_http_code(resp: Response, should=True, http_code=200, info=None):
     """检查httpcode,default 200"""
+    info = '\nINFO:[%s]' % info if info else ''
     if should:  # 期望一致
         if resp.status_code != http_code:
-            raise Exception("resp.status_code:[%s]与期望值:[%s]不一致\nINFO:[%s]\nURL:[%s]\nRequest:[%s]" % (resp.status_code, http_code,
-                                                                                                      info, resp.url, resp.request))
+            raise Exception("resp.status_code:[%s]与期望值:[%s]不一致%s\nURL:[%s]\nRequest:[%s]" % (resp.status_code, http_code,
+                                                                                             info, resp.url, resp.request))
     else:  # 期望不一致
         if resp.status_code == http_code:
-            raise Exception("resp.status_code:[%s]与值:[%s]一致,期望不一致\nINFO:[%s]\nURL:[%s]\nRequest:[%s]" % (resp.status_code, http_code,
+            raise Exception("resp.status_code:[%s]与值:[%s]一致,期望不一致%s\nURL:[%s]\nRequest:[%s]" % (resp.status_code, http_code,
                                                                                                          info, resp.url, resp.request))
 
 
