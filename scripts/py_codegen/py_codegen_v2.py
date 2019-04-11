@@ -145,6 +145,7 @@ class PyCodeGen(object):
         return Model(model_file, model_class)
 
     def get_path_name(self, path):
+        path = path.replace('-', '_')  # resolve /by-key/{key}
         parts = path.split(os.path.sep)
         if re.match('^v[1-9]+$', parts[1]):
             return ('_'.join(parts[2:]).replace('{', '').replace('}', '') + '_' + parts[1]).lower()
