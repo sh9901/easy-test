@@ -41,7 +41,7 @@ def camel_case_to_under_score(camel_case):
     return ''.join(map(lambda x: x if (x.islower() or x == '_' or str(x).isdigit()) else '_' + x.lower(), camel_case)).lstrip('_')
 
 
-def wrap_def_line(line, max_len=120):
+def wrap_def_line(line, max_len=140):
     if len(line) < max_len:
         return line
 
@@ -82,7 +82,7 @@ class PyCodeGen(object):
 
     def __init__(self, args):
         self.swagger_doc = args.swagger_doc
-        self.api_base = args.api_base
+        self.api_bases = args.api_bases
         self.code_base = args.code_base
         self.controller_base = args.controller_base
         self.service_base = args.service_base
@@ -266,8 +266,8 @@ class PyCodeGen(object):
 
             request_path = path
 
-            if self.api_base:  # 缩短 controllers 文件和类名
-                self.current_path = self.current_path.replace(self.api_base, '')
+            for api_base in self.api_bases:  # 缩短 controllers 文件和类名
+                self.current_path = self.current_path.replace(api_base, '')
 
             path_meta = self.get_path_meta(self.current_path)
             print('PATH File:', path_meta.path_file)
@@ -420,8 +420,8 @@ def __get_run_args():
     arg_parser = argparse.ArgumentParser('')
     arg_parser.add_argument('-A', '--swagger-doc', action='store', dest='swagger_doc',
                             help='swagger json文档url地址,如: http://app.com/v2/api-docs')
-    arg_parser.add_argument('--api-base', action='store', default='', dest='api_base',
-                            help='在controller文件和类名中忽略该字符串，如：--api-base=/a/b')
+    arg_parser.add_argument('--api-bases', action='store', nargs='+', default=[], dest='api_bases',
+                            help='在controller文件和类名中忽略该字符串，如：--api-bases=/a/b /path')
     arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录绝对路径')
     arg_parser.add_argument('-M', '--model-base', action='store', dest='model_base', default='model', help='model目标目录')
     arg_parser.add_argument('-C', '--controller-base', action='store', dest='controller_base', default='controller',
@@ -441,7 +441,7 @@ def __get_run_args():
         with open(config_file) as f:
             config: dict = json.load(f)
             args.swagger_doc = config['swagger_doc'] if not args.swagger_doc and 'swagger_doc' in config else args.swagger_doc
-            args.api_base = config['api_base'] if not args.api_base and 'api_base' in config else args.api_base
+            args.api_bases = config['api_bases'] if not args.api_bases and 'api_bases' in config else args.api_bases
             args.model_base = config['model_base'] if not args.model_base and 'model_base' in config else args.model_base
             args.controller_base = config['controller_base'] if not args.controller_base and config.get(
                 'controller_base') else args.controller_base
