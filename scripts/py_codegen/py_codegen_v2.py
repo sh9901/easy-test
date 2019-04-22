@@ -99,7 +99,7 @@ class PyCodeGen(object):
 
     def init_base_dir(self, keep):
         if keep:  # 如果保留老版本则先备份
-            backups = "backups"
+            backups = ".backups"
             backupstamp = '%Y%m%d%H%M%S_'
             if not os.path.exists(backups):
                 os.mkdir(backups)
