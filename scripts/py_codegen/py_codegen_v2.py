@@ -164,7 +164,12 @@ class PyCodeGen(object):
         return Path(path_file, path_class)
 
     def run(self):
-        j = requests.get(self.swagger_doc).json()
+        if os.path.isfile(self.swagger_doc):
+            j = json.load(open(self.swagger_doc))
+        elif re.match('^http.*', self.swagger_doc):
+            j = requests.get(self.swagger_doc).json()
+        else:
+            raise Exception('No swagger-doc [json file or api-doc url] provided.')
 
         self.swagger_version = j.get('swagger')
         self.service_info: dict = j.get('info')
@@ -422,7 +427,7 @@ def __get_run_args():
                             help='swagger json文档url地址,如: http://app.com/v2/api-docs')
     arg_parser.add_argument('--api-bases', action='store', nargs='+', default=[], dest='api_bases',
                             help='在controller文件和类名中忽略该字符串，如：--api-bases=/a/b /path')
-    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录绝对路径')
+    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录绝对路径[必填]')
     arg_parser.add_argument('-M', '--model-base', action='store', dest='model_base', default='model', help='model目标目录')
     arg_parser.add_argument('-C', '--controller-base', action='store', dest='controller_base', default='controller',
                             help='controller目标目录')
