@@ -285,9 +285,9 @@ class PyCodeGen(object):
             controller_imports = {'from easy.base.service_base import ServiceBase'}
             controller_class_row = 'class %s(ServiceBase):\n' % controller_class
 
-            controller_init = "%sdef __init__(self, host):\n" % sp4
+            controller_init = "%sdef __init__(self, host, **kwargs):\n" % sp4
             controller_path_doc = sp8 + '"""%s"""\n' % path
-            controller_super = sp8 + 'super(%s, self).__init__(host=host)' % controller_class
+            controller_super = sp8 + 'super(%s, self).__init__(host=host, **kwargs)' % controller_class
 
             controller_init_spec = wrap_def_line(controller_init) + controller_path_doc + wrap_def_line(controller_super)
 
