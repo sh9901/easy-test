@@ -140,7 +140,7 @@ class PyCodeGen(object):
         s1 = model_key.replace('«', '_').replace('»', '').replace(',', '')
         s2 = camel_case_to_under_score(s1)
         model_file = s2.replace('__', '_').replace('data_result_paged_list', 'drpl').replace('data_result_list', 'drl').replace(
-            'data_result', 'dr').replace('paged_list', 'pl')
+            'data_result', 'dr').replace('paged_list', 'pl').replace('page_data_response', 'pdr').replace('page_response', 'pr')
         model_class = ''.join([s.title() for s in model_file.split('_')])
         return Model(model_file, model_class)
 
