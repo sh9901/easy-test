@@ -13,7 +13,9 @@ setup(name='easy-test',
           'pytest11': ['salt=pytest_salt.plugin']
       },
       install_requires=['pytest>=4.0',
-                        'requests'],
+                        'requests',
+                        'jsondiff',
+                        'peewee'],
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: QA Engineers / Developers',
