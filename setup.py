@@ -7,8 +7,13 @@ setup(name='easy-test',
       author_email='yanghuawei@hujiang.com',
       url='http://qa.yeshj.com',
       packages=find_packages(),
-      keywords='requests api test easy',
-      entry_points={"console_scripts": ["pycodegen=scripts.py_codegen.py_codegen_v2:main"]},
+      keywords='requests api test easy pytest plugin',
+      entry_points={
+          'console_scripts': ['pycodegen=scripts.py_codegen.py_codegen_v2:main'],
+          'pytest11': ['salt=pytest_salt.plugin']
+      },
+      install_requires=['pytest>=4.0',
+                        'requests'],
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: QA Engineers / Developers',
