@@ -156,7 +156,7 @@ class PyCodeGen(object):
         path_name = self.get_path_name(path)
         path_name_pieces = []
         for piece in path_name.split('_'):
-            if piece not in path_name_pieces:
+            if piece not in path_name_pieces or (piece in path_name_pieces and piece != path_name_pieces[-1]):
                 path_name_pieces.append(piece)
 
         path_file = '_'.join(path_name_pieces)
