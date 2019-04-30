@@ -32,12 +32,18 @@ def check_http_code(resp: Response, should=True, http_code=200, info=None):
     else:  # 期望不一致
         if resp.status_code == http_code:
             raise Exception("resp.status_code:[%s]与值:[%s]一致,期望不一致%s\nURL:[%s]\nRequest:[%s]" % (resp.status_code, http_code,
-                                                                                                         info, resp.url, resp.request))
+                                                                                                info, resp.url, resp.request))
 
 
-def check_http_code_not200(resp: Response):
+def check_http_code_200(resp: Response, info=None):
+    """检查 httpcode 是否为 200"""
+    check_http_code(resp, should=True, http_code=200, info=info)
+
+
+def check_http_code_not200(resp: Response, info=None):
     """检查http_code不是200"""
-    assert resp.status_code != 200, 'resp.status_code:%s期望不是200, URL:[%s], Request:[%s]' % (resp.status_code, resp.url, resp.request)
+    # assert resp.status_code != 200, 'resp.status_code:%s期望不是200, URL:[%s], Request:[%s]' % (resp.status_code, resp.url, resp.request)
+    check_http_code(resp, should=False, http_code=200, info=info)
 
 
 def check_status_code(resp: Response, expected_status_code=0):
