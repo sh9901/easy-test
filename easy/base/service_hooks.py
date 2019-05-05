@@ -40,6 +40,9 @@ def check_http_code_200(resp: Response, should=True, info=None):
     check_http_code(resp, should=should, http_code=200, info=info)
 
 
+chk200 = check_http_code_200  # short cut for most frequently used.
+
+
 def check_status_code(resp: Response, expected_status_code=0):
     """检查resp.data内的status值,default 0"""
     resp_status = None
