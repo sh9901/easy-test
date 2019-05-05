@@ -35,15 +35,9 @@ def check_http_code(resp: Response, should=True, http_code=200, info=None):
                                                                                                 info, resp.url, resp.request))
 
 
-def check_http_code_200(resp: Response, info=None):
+def check_http_code_200(resp: Response, should=True, info=None):
     """检查 httpcode 是否为 200"""
-    check_http_code(resp, should=True, http_code=200, info=info)
-
-
-def check_http_code_not200(resp: Response, info=None):
-    """检查http_code不是200"""
-    # assert resp.status_code != 200, 'resp.status_code:%s期望不是200, URL:[%s], Request:[%s]' % (resp.status_code, resp.url, resp.request)
-    check_http_code(resp, should=False, http_code=200, info=info)
+    check_http_code(resp, should=should, http_code=200, info=info)
 
 
 def check_status_code(resp: Response, expected_status_code=0):
