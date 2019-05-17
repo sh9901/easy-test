@@ -365,8 +365,8 @@ class PyCodeGen(object):
                         else:
                             raise Exception('parameter "in" type[%s] unknown' % parameter)
 
-                controller_method = "%sdef %s(self" % (sp4, operationId)
-                shadow_method = "\n\n%sdef _%s(self" % (sp4, operationId)
+                controller_method = "%sdef _%s(self" % (sp4, operationId)
+                shadow_method = "\n\n%sdef %s(self" % (sp4, operationId)
                 shadow_return = "\n%sreturn getattr(self.%s(" % (sp8, operationId)
 
                 if path_params:
@@ -390,22 +390,20 @@ class PyCodeGen(object):
                     shadow_method += ', ' + 'headers={%s}' % ','.join(header_params)
                     shadow_return += 'headers=headers, '
 
-                controller_method += ', **kwargs):\n'  # controller声明结束
-                shadow_method += ', should=True, http=200, **kwargs) -> %s:' % (resp_ref_meta.model_class if resp_ref_meta else 'object')
+                controller_method += ', **kwargs):'  # controller声明结束
+                shadow_method += ', should=True, http=200, **kwargs):'
                 shadow_return += "hook_funcs=[[chk_http, should, http]], **kwargs), 'model', None)"
 
-                doc_str = ''
+                doc_str = '\n'
                 if summary:
-                    doc_str = sp8 + '"""\n' + sp8 + summary
+                    doc_str += sp8 + '"""\n' + sp8 + summary
                 if method_field_descriptions:
                     doc_str += '\n'
                     doc_str += '\n'.join(method_field_descriptions)
                 if resp_ref_meta:
-                    doc_str += '\n%s:return: %s' % (sp8, 'response with model: %s' % resp_ref_meta.model_class)
+                    doc_str += '\n%s:rtype: %s' % (sp8, resp_ref_meta.model_class)
                 if doc_str:
                     doc_str += '\n%s"""' % sp8
-
-                controller_method += doc_str
 
                 request_line = '\n' + sp8 + "return self.%s('%s'" % (method, request_path)
                 if path_param_names:
@@ -427,7 +425,7 @@ class PyCodeGen(object):
 
                 request_line = wrap_line(request_line)
                 controller_method += request_line
-                controller_method += shadow_method + shadow_return
+                controller_method += shadow_method + doc_str + shadow_return
                 controller_methods.append(controller_method)
 
             controller_imports = list(controller_imports)
