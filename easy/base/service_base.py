@@ -274,11 +274,6 @@ class ServiceBase(object):
             raise Exception(
                 '%s\n[REQUEST:<%s>]\n[RESPONSE:<%s-%s,%s>]' % (message, request, response.status_code, response.reason, response.text))
 
-    def check_http_code(self, request, response: Response, expected_http_code=200):
-        if response.status_code != expected_http_code:
-            self.raise_exception(request, response, should_success=True,
-                                 message='检查httpcode：%s值与期望：%s不匹配' % (response.status_code, expected_http_code))
-
     # region 不推荐使用的url辅助方法
     def build_url(self, path, path_param_list=None, query_params: dict = None, ensure_slash=False):
         warnings.warn("强烈不推荐使用，保留仅为兼容旧的使用习惯，推荐使用host/path/params等http标准做法", DeprecationWarning, 2)
