@@ -15,7 +15,9 @@ setup(name='easy-test',
       install_requires=['pytest>=4.0',
                         'requests',
                         'jsondiff',
-                        'peewee'],
+                        'peewee',
+                        'autopep8'
+                        ],
       classifiers=[
           'Development Status :: 5 - Production/Stable',
           'Intended Audience :: QA Engineers / Developers',
