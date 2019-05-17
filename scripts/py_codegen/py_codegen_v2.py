@@ -41,7 +41,7 @@ def camel_case_to_under_score(camel_case):
     return ''.join(map(lambda x: x if (x.islower() or x == '_' or str(x).isdigit()) else '_' + x.lower(), camel_case)).lstrip('_')
 
 
-def wrap_def_line(line, max_len=140):
+def wrap_line(line, max_len=140):
     if len(line) < max_len:
         return line
 
@@ -76,6 +76,10 @@ def wrap_def_line(line, max_len=140):
         wrapped_line += current_line
 
     return wrapped_line.rstrip(',')
+
+
+def wrap_params():
+    pass
 
 
 class PyCodeGen(object):
@@ -153,6 +157,7 @@ class PyCodeGen(object):
             return ('_'.join(parts[1:]).replace('{', '').replace('}', '')).lower()
 
     def get_path_meta(self, path: str):
+        path = path.replace('.', '')  # /pause.json
         path_name = self.get_path_name(path)
         path_name_pieces = []
         for piece in path_name.split('_'):
@@ -242,7 +247,7 @@ class PyCodeGen(object):
                     sp8, '\n'.join(field_descriptions), sp8) if field_descriptions else None
 
                 init_row = init_row % ', '.join(fields)
-                wrapped_init_row = wrap_def_line(init_row)
+                wrapped_init_row = wrap_line(init_row)
 
                 import_rows = list(import_rows)
                 import_rows.sort()  # set 无序导致import 出现 gitdiff
@@ -282,14 +287,14 @@ class PyCodeGen(object):
             controller_file = os.path.join('controller', path_meta.path_file + '_controller.py')
             controller_class = path_meta.path_class + 'Controller'
 
-            controller_imports = {'from easy.base.service_base import ServiceBase'}
+            controller_imports = {'from easy.base.service_base import ServiceBase', 'from easy.base.service_hooks import chk_http'}
             controller_class_row = 'class %s(ServiceBase):\n' % controller_class
 
             controller_init = "%sdef __init__(self, host, **kwargs):\n" % sp4
             controller_path_doc = sp8 + '"""%s"""\n' % path
             controller_super = sp8 + 'super(%s, self).__init__(host=host, **kwargs)' % controller_class
 
-            controller_init_spec = wrap_def_line(controller_init) + controller_path_doc + wrap_def_line(controller_super)
+            controller_init_spec = wrap_line(controller_init) + controller_path_doc + wrap_line(controller_super)
 
             controller_methods = []
             methods = self.api_paths.get(path)
@@ -359,19 +364,37 @@ class PyCodeGen(object):
                             raise Exception('parameter "in" type[%s] unknown' % parameter)
 
                 controller_method = "%sdef %s(self" % (sp4, operationId)
+                shadow_method = "\n\n%sdef _%s(self" % (sp4, operationId)
+                shadow_return = "\n%sreturn getattr(self.%s(" % (sp8, operationId)
 
                 if path_params:
                     controller_method += ', ' + ', '.join(path_params)
+                    shadow_method += ', ' + ', '.join(path_params)
+                    shadow_return += ', '.join(['{0}={0}'.format(path_param.split(':')[0]) for path_param in path_params]) + ', '
                 if load_param:
                     controller_method += ', %s' % load_param
+                    shadow_method += ', %s' % load_param
+                    shadow_return += '{0}={0}'.format(load_param.split(':')[0]) + ', '
                 if json_param:
                     controller_method += ', %s' % json_param
+                    shadow_method += ', %s' % json_param
+                    shadow_return += '{0}={0}'.format(json_param.split(':')[0]) + ', '
                 if query_params:
                     controller_method += ', ' + 'params={%s}' % ', '.join(query_params)
+                    shadow_method += ', ' + 'params={%s}' % ', '.join(query_params)
+                    shadow_return += 'params=params, '
                 if header_params:
                     controller_method += ', ' + 'headers={%s}' % ','.join(header_params)
+                    shadow_method += ', ' + 'headers={%s}' % ','.join(header_params)
+                    shadow_return += 'headers=headers, '
 
                 controller_method += ', **kwargs):\n'  # controller声明结束
+                shadow_method += ', should=True, http=200, **kwargs) -> %s:' % (resp_ref_meta.model_class if resp_ref_meta else 'object')
+                shadow_return += "hook_funcs=[[chk_http, should, http]], **kwargs), 'model')"
+
+                # controller_method = wrap_line(controller_method)
+                # shadow_method = wrap_line(shadow_method)
+                # shadow_return = wrap_line(shadow_return)
 
                 doc_str = ''
                 if summary:
@@ -404,8 +427,9 @@ class PyCodeGen(object):
                     request_line += ' model_hook=%s.to_model,' % resp_ref_meta.model_class
                 request_line += ' **kwargs)'
 
-                request_line = wrap_def_line(request_line)
+                request_line = wrap_line(request_line)
                 controller_method += request_line
+                controller_method += shadow_method + shadow_return
                 controller_methods.append(controller_method)
 
             controller_imports = list(controller_imports)
