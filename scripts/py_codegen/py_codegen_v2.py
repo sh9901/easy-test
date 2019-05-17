@@ -367,7 +367,7 @@ class PyCodeGen(object):
 
                 controller_method = "%sdef _%s(self" % (sp4, operationId)
                 shadow_method = "\n\n%sdef %s(self" % (sp4, operationId)
-                shadow_return = "\n%sreturn getattr(self.%s(" % (sp8, operationId)
+                shadow_return = "\n%sreturn getattr(self._%s(" % (sp8, operationId)
 
                 if path_params:
                     controller_method += ', ' + ', '.join(path_params)
