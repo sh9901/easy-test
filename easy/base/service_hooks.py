@@ -13,7 +13,7 @@ def check_response_in_time_g(resp: Response, time_threshold=10):
 def print_response_info_g(resp: Response):
     logging.info('Response.status_code: %s' % resp.status_code)
     logging.info('Response.elapsed: %s' % resp.elapsed)
-    logging.info('Response.content: \n%s' % jsonUtil.pformat_resp(resp))
+    logging.info('Response.content: %s' % jsonUtil.pformat_resp(resp))
 
 
 def ensure_utf8_g(resp: Response):
