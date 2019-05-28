@@ -9,6 +9,7 @@ import requests
 import autopep8
 from collections import namedtuple
 from typing import List
+from datetime import datetime
 
 sp = " "
 sp4 = sp * 4
@@ -94,8 +95,15 @@ class PyCodeGen(object):
         self.model_base = args.model_base
         self.included_paths = args.included_paths
         self.excluded_paths = args.excluded_paths
+        self.target_relative_dir = args.target_relative_dir
 
         if self.swagger_doc and self.code_base:
+            if self.target_relative_dir:
+                try:
+                    os.chdir(self.target_relative_dir)
+                except:
+                    print('切换当前目录到%s失败' % self.target_relative_dir)
+                    sys.exit(-1)
             # 如果代码目录、swagger doc地址已获取，则初始化项目目录结构
             self.init_base_dir(args.keep)
         else:
@@ -460,6 +468,7 @@ def __get_run_args():
     arg_parser.add_argument('-P', '--included-paths', action='store', nargs='+', dest='included_paths', help='待处理的接口列表,不填写则处理全部')
     arg_parser.add_argument('-E', '--excluded-paths', action='store', nargs='+', dest='excluded_paths', help='排除的待处理接口列表')
     arg_parser.add_argument('-K', '--keep', action='store', type=bool, dest='keep', default=True, help='是否保留老版本，默认为True')
+    arg_parser.add_argument('-T', '--target-relative-dir', action='store', dest='target_relative_dir', help='保存代码时相对于当前目录的相对路径')
 
     args = arg_parser.parse_args()
 
@@ -481,6 +490,7 @@ def __get_run_args():
                 'included_paths') else args.included_paths
             args.excluded_paths = config['excluded_paths'] if not args.excluded_paths and config.get(
                 'excluded_paths') else args.excluded_paths
+            args.target_relative_dir = config.get('target_relative_dir') or args.target_relative_dir
 
     return args
 
@@ -492,4 +502,7 @@ def main():
 
 
 if __name__ == '__main__':
+    start = datetime.now()
     main()
+    end = datetime.now()
+    print('用时：', (end - start).total_seconds(), '秒')
