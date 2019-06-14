@@ -252,7 +252,7 @@ def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True,
                   pprint.pformat(expect, width=sys.maxsize),
                   ORIGI_HOLDER % pprint.pformat(ori_expected, width=sys.maxsize) if expect != ori_expected else '')
     if not isinstance(actual, (dict, list)) or not isinstance(expect, (dict, list)):
-        return False, "JSON REGEX MATCH RESULT:FAIL,Reason:only support dict/list\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECT>>>>>\n\%s%s" \
+        return False, "JSON REGEX MATCH RESULT:FAIL,Reason:only support dict/list\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECT>>>>>\n%s%s" \
                % (pprint.pformat(actual, width=sys.maxsize),
                   ORIGI_HOLDER % pprint.pformat(ori_actual, width=sys.maxsize) if actual != ori_actual else '',
                   pprint.pformat(expect, width=sys.maxsize),
@@ -262,7 +262,7 @@ def regex_compare(actual: dict, expect: dict, contains_as_ture=True, match=True,
         if len(actual) == len(expect) == 0:
             return True, 'JSON REGEX MATCH RESULT:PASS,Reason:LIST CONTENT IS EMPTY.'
         elif len(actual) == 0 or len(expect) == 0:
-            return False, 'JSON REGEX MATCH RESULT:FAIL,Reason:ACTUAL OR EXPECTED JSON LIST IS EMPTY\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECT>>>>>\n\%s%s' \
+            return False, 'JSON REGEX MATCH RESULT:FAIL,Reason:ACTUAL OR EXPECTED JSON LIST IS EMPTY\n>>>>>ACTUAL>>>>>\n%s%s\n>>>>>EXPECT>>>>>\n%s%s' \
                           % (pprint.pformat(actual, width=sys.maxsize),
                              ORIGI_HOLDER % pprint.pformat(ori_actual, width=sys.maxsize) if actual != ori_actual else '',
                              pprint.pformat(expect, width=sys.maxsize),
