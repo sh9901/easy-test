@@ -130,6 +130,7 @@ class PyCodeGen(object):
         self.app_where = args.app_where
         self.app_name = args.app_name
         self.app_version = args.app_version
+        self.pip_name = args.pip_name
 
         if not self.out_box:
             if self.swagger_doc and self.code_base:
@@ -158,7 +159,7 @@ class PyCodeGen(object):
                 self.init_base_dir(keep=False)
                 self.run()
                 os.chdir('../')
-                os.system('pip wheel . -w %s' % os.path.expanduser(self.app_where))
+                os.system('%s wheel . -w %s' % (self.pip_name, os.path.expanduser(self.app_where)))
 
     def init_base_dir(self, keep):
         if keep:  # 如果保留老版本则先备份
@@ -528,6 +529,7 @@ def __get_run_args():
     arg_parser.add_argument('-W', '--app-where', action='store', dest='app_where')
     arg_parser.add_argument('-N', '--app-name', action='store', dest='app_name', type=str, help='如：classec-search-api')
     arg_parser.add_argument('-V', '--app-version', action='store', dest='app_version', type=str, help='如：master、develop、')
+    arg_parser.add_argument('-p', '--pip-name', action='store', dest='pip_name', help='需要制定pip版本如pip3.6、pip3.8')
 
     args = arg_parser.parse_args()
 

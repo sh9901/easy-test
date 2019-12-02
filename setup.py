@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='ease-test',
-      version='0.1.1',
+      version='0.1.3',
       description='pytest plugin for run/report settings',
       author='YangHuawei',
       author_email='yanghuawei@hujiang.com',
