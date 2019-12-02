@@ -10,6 +10,7 @@ import autopep8
 from collections import namedtuple
 from typing import List
 from datetime import datetime
+import tempfile
 
 sp = " "
 sp4 = sp * 4
@@ -19,6 +20,34 @@ sp16 = sp * 16
 
 Model = namedtuple('model', ['model_file', 'model_class'])
 Path = namedtuple('path', ['path_file', 'path_class'])
+
+outbox_setup = """from setuptools import setup, find_packages
+
+setup(name="{{APP_NAME}}",
+      version='{{APP_VERSION}}',
+      description='{{APP_NAME}}@{{APP_VERSION}} API bridage with controller/model',
+      author='YangHuawei',
+      author_email='yanghuawei@hujiang.com',
+      url='http://qa.yeshj.com',
+      packages=find_packages(),
+      keywords='requests api test easy pytest plugin',
+      install_requires=['pytest>=4.0',
+                        'requests',
+                        'git+https://github.com/sh9901/easy-test.git'
+                        ],
+      classifiers=[
+          'Development Status :: Production/Stable',
+          'Intended Audience :: QA Engineers / Developers',
+          'Operating System :: Linux',
+          'Operating System :: Microsoft :: Windows',
+          'Operating System :: MacOS :: MacOS X',
+          'Topic :: Software Development :: Quality Assurance',
+          'Topic :: Software Development :: Testing',
+          'Programming Language :: Python :: 3.6',
+          'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+      ])
+"""
 
 
 def swagger_type_to_python(swagger_type, format=None):
@@ -97,18 +126,39 @@ class PyCodeGen(object):
         self.excluded_paths = args.excluded_paths
         self.target_relative_dir = args.target_relative_dir
 
-        if self.swagger_doc and self.code_base:
-            if self.target_relative_dir:
-                try:
-                    os.chdir(self.target_relative_dir)
-                except:
-                    print('切换当前目录到%s失败' % self.target_relative_dir)
-                    sys.exit(-1)
-            # 如果代码目录、swagger doc地址已获取，则初始化项目目录结构
-            self.init_base_dir(args.keep)
+        self.out_box = args.out_box
+        self.app_where = args.app_where
+        self.app_name = args.app_name
+        self.app_version = args.app_version
+
+        if not self.out_box:
+            if self.swagger_doc and self.code_base:
+                if self.target_relative_dir:
+                    try:
+                        os.chdir(self.target_relative_dir)
+                    except:
+                        print('切换当前目录到%s失败' % self.target_relative_dir)
+                        sys.exit(-1)
+                # 如果代码目录、swagger doc地址已获取，则初始化项目目录结构
+                self.init_base_dir(args.keep)
+            else:
+                print('swagger_doc没有提供且没有自动获取到，退出处理')
+                sys.exit(-1)
         else:
-            print('swagger_doc没有提供且没有自动获取到，退出处理')
-            sys.exit(-1)
+            with tempfile.TemporaryDirectory(prefix='autoapi') as tmpdir:
+                os.chdir(tmpdir)
+                os.mkdir(self.app_name)
+                os.chdir(self.app_name)
+                app_folder = self.app_name.replace('-', '_')
+                setup = outbox_setup.replace('{{APP_NAME}}', self.app_name).replace('{{APP_VERSION}}', self.app_version)
+                with open('setup.py', 'w') as f:
+                    f.write(setup)
+                os.mkdir(app_folder)
+                os.chdir(app_folder)
+                self.init_base_dir(keep=False)
+                self.run()
+                os.chdir('../')
+                os.system('pip wheel . -w %s' % os.path.expanduser(self.app_where))
 
     def init_base_dir(self, keep):
         if keep:  # 如果保留老版本则先备份
@@ -464,7 +514,7 @@ def __get_run_args():
                             help='swagger json文档url地址,如: http://app.com/v2/api-docs')
     arg_parser.add_argument('--api-bases', action='store', nargs='+', default=[], dest='api_bases',
                             help='在controller文件和类名中忽略该字符串，如：--api-bases=/a/b /path')
-    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=True, help='生成代码目标目录绝对路径[必填]')
+    arg_parser.add_argument('-B', '--code-base', action='store', dest='code_base', required=False, help='生成代码目标目录绝对路径[必填]')
     arg_parser.add_argument('-M', '--model-base', action='store', dest='model_base', default='model', help='model目标目录')
     arg_parser.add_argument('-C', '--controller-base', action='store', dest='controller_base', default='controller',
                             help='controller目标目录')
@@ -474,27 +524,39 @@ def __get_run_args():
     arg_parser.add_argument('-K', '--keep', action='store', type=bool, dest='keep', default=True, help='是否保留老版本，默认为True')
     arg_parser.add_argument('-T', '--target-relative-dir', action='store', dest='target_relative_dir', help='保存代码时相对于当前目录的相对路径')
 
+    arg_parser.add_argument('-O', '--out-box', action='store', dest='out_box', default=False, type=bool, help='')
+    arg_parser.add_argument('-W', '--app-where', action='store', dest='app_where')
+    arg_parser.add_argument('-N', '--app-name', action='store', dest='app_name', type=str, help='如：classec-search-api')
+    arg_parser.add_argument('-V', '--app-version', action='store', dest='app_version', type=str, help='如：master、develop、')
+
     args = arg_parser.parse_args()
 
-    assert os.getcwd() == args.code_base, '为防止误操作导致覆盖，需提前 cd 的操作目录，--code-base 参数必须提供且与当前目录一致[绝对路径]。\ncurrent-dir：%s, ' \
-                                          '\n--code-base：%s' % (os.getcwd(), args.code_base)
-    # assert os.path.split(args.code_base)[-2].endswith('autotest')
-    config_file = os.path.join(args.code_base, 'pycodegenconfig.json')
-    if os.path.exists(config_file):
-        with open(config_file) as f:
-            config: dict = json.load(f)
-            args.swagger_doc = config['swagger_doc'] if not args.swagger_doc and 'swagger_doc' in config else args.swagger_doc
-            args.api_bases = config['api_bases'] if not args.api_bases and 'api_bases' in config else args.api_bases
-            args.model_base = config['model_base'] if not args.model_base and 'model_base' in config else args.model_base
-            args.controller_base = config['controller_base'] if not args.controller_base and config.get(
-                'controller_base') else args.controller_base
-            args.service_base = config['service_base'] if not args.service_base and config.get(
-                'service_base') else args.service_base
-            args.included_paths = config['included_paths'] if not args.included_paths and config.get(
-                'included_paths') else args.included_paths
-            args.excluded_paths = config['excluded_paths'] if not args.excluded_paths and config.get(
-                'excluded_paths') else args.excluded_paths
-            args.target_relative_dir = config.get('target_relative_dir') or args.target_relative_dir
+    if not args.out_box:
+        assert args.code_base, '生成代码目标目录绝对路径[必填]'
+        assert os.getcwd() == args.code_base, '为防止误操作导致覆盖，需提前 cd 的操作目录，--code-base 参数必须提供且与当前目录一致[绝对路径]。\ncurrent-dir：%s, ' \
+                                              '\n--code-base：%s' % (os.getcwd(), args.code_base)
+
+        # assert os.path.split(args.code_base)[-2].endswith('autotest')
+        config_file = os.path.join(args.code_base, 'pycodegenconfig.json')
+        if os.path.exists(config_file):
+            with open(config_file) as f:
+                config: dict = json.load(f)
+                args.swagger_doc = config['swagger_doc'] if not args.swagger_doc and 'swagger_doc' in config else args.swagger_doc
+                args.api_bases = config['api_bases'] if not args.api_bases and 'api_bases' in config else args.api_bases
+                args.model_base = config['model_base'] if not args.model_base and 'model_base' in config else args.model_base
+                args.controller_base = config['controller_base'] if not args.controller_base and config.get(
+                    'controller_base') else args.controller_base
+                args.service_base = config['service_base'] if not args.service_base and config.get(
+                    'service_base') else args.service_base
+                args.included_paths = config['included_paths'] if not args.included_paths and config.get(
+                    'included_paths') else args.included_paths
+                args.excluded_paths = config['excluded_paths'] if not args.excluded_paths and config.get(
+                    'excluded_paths') else args.excluded_paths
+                args.target_relative_dir = config.get('target_relative_dir') or args.target_relative_dir
+    else:
+        assert args.app_where and os.path.exists(os.path.expanduser(args.app_where)), 'whl目标路径不存在'
+        assert args.app_name, '--out-box时--app-name参数必需设置'
+        assert args.app_version, '--out-box时--app-version参数必需设置'
 
     return args
 
@@ -502,7 +564,7 @@ def __get_run_args():
 def main():
     args = __get_run_args()
     pycodegen = PyCodeGen(args=args)
-    pycodegen.run()
+    pycodegen.run() if not args.out_box else None
 
 
 if __name__ == '__main__':

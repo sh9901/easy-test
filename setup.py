@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-setup(name='easy-test',
-      version='0.1.0',
+setup(name='ease-test',
+      version='0.1.1',
       description='pytest plugin for run/report settings',
       author='YangHuawei',
       author_email='yanghuawei@hujiang.com',
@@ -19,8 +19,6 @@ setup(name='easy-test',
                         'autopep8'
                         ],
       classifiers=[
-          'Development Status :: 5 - Production/Stable',
-          'Intended Audience :: QA Engineers / Developers',
           'Operating System :: POSIX',
           'Operating System :: Microsoft :: Windows',
           'Operating System :: MacOS :: MacOS X',
@@ -29,4 +27,5 @@ setup(name='easy-test',
           'Topic :: Utilities',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
       ])
