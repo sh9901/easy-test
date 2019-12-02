@@ -25,7 +25,7 @@ outbox_setup = """from setuptools import setup, find_packages
 
 setup(name="{{APP_NAME}}",
       version='{{APP_VERSION}}',
-      description='{{APP_NAME}}@{{APP_VERSION}} API bridage with controller/model',
+      description='{{APP_NAME}}@{{APP_VERSION}} API bridge with controller/model',
       author='YangHuawei',
       author_email='yanghuawei@hujiang.com',
       url='http://qa.yeshj.com',
@@ -33,7 +33,7 @@ setup(name="{{APP_NAME}}",
       keywords='requests api test easy pytest plugin',
       install_requires=['pytest>=4.0',
                         'requests',
-                        'git+https://github.com/sh9901/easy-test.git'
+                        'ease-test'
                         ],
       classifiers=[
           'Development Status :: Production/Stable',
