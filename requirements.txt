@@ -1,6 +1,5 @@
 requests
 peewee
 pymysql==0.9.2
-pymssql # ON mac: Need freetds@0.91 installed, brew install freetds@0.91 https://segmentfault.com/a/1190000013601519
 jsondiff
 pytest
