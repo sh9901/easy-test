@@ -367,7 +367,7 @@ class PyCodeGen(object):
                 parameters: List[dict] = method_content.get('parameters')
                 responses = method_content.get('responses')
                 response200: dict = responses.get('200')  # presume always exist.
-                if 'schema' in response200:
+                if response200 and 'schema' in response200:
                     response200_schema = response200.get('schema')
                 else:
                     continue  # response200时没有 schema 存在
