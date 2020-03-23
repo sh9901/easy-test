@@ -1,11 +1,11 @@
 from setuptools import setup, find_packages
 
 setup(name='ease-test',
-      version='0.1.3',
-      description='pytest plugin for run/report settings',
+      version='0.1.5',
+      description='requests wrapper for easy api testing, useful utilities and pytest plugin for run/report settings',
       author='YangHuawei',
-      author_email='yanghuawei@hujiang.com',
-      url='http://qa.yeshj.com',
+      author_email='yanghuawei@outlook.com',
+      url='https://github.com/sh9901/easy-test',
       packages=find_packages(),
       keywords='requests api test easy pytest plugin',
       entry_points={

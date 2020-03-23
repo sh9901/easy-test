@@ -80,3 +80,8 @@ def compare(actual: dict, expected: dict, ignore_nones=False, unify_name=False, 
 ### peewee_custom.py - peewee自定义数据类型
 
 ### randomUtil - 随机字符串/数字工具
+
+### sqlite3_base.py - 类似于redis作用的本地k/v缓存
+
+### pytest-salt - pytest plugin
+    用于指定测试执行环境和自动备份测试报告
