@@ -505,7 +505,7 @@ class PyCodeGen(object):
 
             content = autopep8.fix_code(content, options={'aggressive': 2, 'in_place': True, 'max_line_length': 140}, encoding='utf-8')
 
-            with open(controller_file, 'w') as f_controller:
+            with open(controller_file, 'w', encoding='utf8') as f_controller:
                 f_controller.writelines(content)
 
 
